@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Resources/elisat.png</file>
+        <file>Resources/stopRecToFile.svg</file>
+        <file>Resources/startRecToFile.png</file>
+        <file>Resources/startRecToFile.svg</file>
+        <file>Resources/stopRecToFile.png</file>
+        <file>Resources/startRecToFileBlink.png</file>
+        <file>Resources/startRecToFileBlink.svg</file>
+    </qresource>
+</RCC>
