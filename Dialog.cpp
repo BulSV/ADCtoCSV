@@ -11,6 +11,8 @@
 #include <QPalette>
 #include <QApplication>
 #include <QFont>
+#include <QRegExp>
+#include <QRegExpValidator>
 
 #include "DataHandler.h"
 
@@ -23,7 +25,9 @@
 
 #define BLINKTIMEREC 1000 // ms
 
-#define VOLTFACTOR 2.2/4096 // V
+#define TIMEDISPLAY 1000 // ms
+
+#define VOLTFACTOR 5*2.2/4096 // V
 
 void Dialog::view()
 {
@@ -94,6 +98,8 @@ void Dialog::connections()
     connect(m_BlinkTimeRec, SIGNAL(timeout()), this, SLOT(blinkRecButton()));
     connect(m_bStopRec, SIGNAL(clicked()), this, SLOT(stopRec()));
     connect(m_bSetRate, SIGNAL(clicked()), this, SLOT(setRate()));
+
+    connect(m_TimeDisplay, SIGNAL(timeout()), this, SLOT(timeDisplay()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -193,7 +199,7 @@ void Dialog::received(bool isReceived)
 
         if(m_isRecording) {
             m_VoltList.push_back(QString::number(m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR));
-            m_SecondList.push_back(QString::number(m_CurrentTime->elapsed()/1000.0));
+            m_SecondList.push_back(QString::number(static_cast<double>(m_CurrentTime->elapsed()/1000.0)));
         }
     }
 }
@@ -216,6 +222,7 @@ void Dialog::record()
         if(m_chbTimer->isChecked()) {
             m_leTimer->setEnabled(false);
             m_bStopRec->setEnabled(false);
+            m_lTickTime->setText(m_leTimer->text());
         }
 
         if(!m_BlinkTimeRec->isActive()) {
@@ -225,6 +232,7 @@ void Dialog::record()
         }
 
         m_CurrentTime->start();
+        m_TimeDisplay->start();
     }
 }
 
@@ -283,6 +291,7 @@ void Dialog::stopRec()
 #ifdef DEBUG
     qDebug() << "Stopping recording...";
 #endif
+    m_TimeDisplay->stop();
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
     m_bRec->setEnabled(true);
@@ -363,6 +372,118 @@ void Dialog::stopRec()
 
     DataHandler dataHandler;
     dataHandler.dumpDataToFile(fileName, m_Data);
+#ifdef DEBUG
+    qDebug() << "DATA SIZE:" << m_Data.size();
+#endif
+}
+
+void Dialog::timeCountUp()
+{
+    int time = m_CurrentTime->elapsed()/1000;
+    int sec = time % 60;
+    time /= 60;
+    int minute = time % 60;
+    int hour = time / 60;
+
+    QString hourStr;
+    QString minuteStr;
+    QString secStr;
+
+    if(hour < 10) {
+        hourStr = "0" + QString::number(hour);
+    } else {
+        hourStr = QString::number(hour);
+    }
+    if(minute < 10) {
+        minuteStr = "0" + QString::number(minute);
+    } else {
+        minuteStr = QString::number(minute);
+    }
+    if(sec < 10) {
+        secStr = "0" + QString::number(sec);
+    } else {
+        secStr = QString::number(sec);
+    }
+
+    QString timeStr;
+    timeStr = "<font size=15 face=Consolas>" + hourStr + ":" + minuteStr + ":" + secStr + "</font>";
+    m_lTickTime->setText(timeStr);
+}
+
+void Dialog::timeCountdown()
+{
+    QStringList timeList = m_leTimer->text().split(':');
+#ifdef DEBUG
+    qDebug() << "TIMER TEXT:" << m_leTimer->text();
+#endif
+    if(timeList.at(0).isEmpty()) {
+        timeList.replace(0, "00");
+    }
+    if(timeList.at(1).isEmpty()) {
+        timeList.replace(1, "00");
+    }
+    if(timeList.at(2).isEmpty()) {
+        timeList.replace(2, "00");
+    }
+    bool ok;
+    int hour = timeList.at(0).toInt(&ok);
+    int minute = timeList.at(1).toInt(&ok);
+    int sec = timeList.at(2).toInt(&ok);
+#ifdef DEBUG
+    qDebug() << "OK?" << ok;
+#endif
+    int time = sec + 60*minute + 60*60*hour;
+
+    time -= m_CurrentTime->elapsed()/1000;
+    if(time > 0) {
+        sec = time % 60;
+        time /= 60;
+        minute = time % 60;
+        hour = time / 60;
+    } else {
+        sec = 0;
+        minute = 0;
+        hour = 0;
+        stopRec();
+    }
+#ifdef DEBUG
+    qDebug() << "hour:" << hour;
+    qDebug() << "minute:" << minute;
+    qDebug() << "sec:" << sec;
+    qDebug() << "time:" << time;
+#endif
+    QString hourStr;
+    QString minuteStr;
+    QString secStr;
+
+    if(hour < 10) {
+        hourStr = "0" + QString::number(hour);
+    } else {
+        hourStr = QString::number(hour);
+    }
+    if(minute < 10) {
+        minuteStr = "0" + QString::number(minute);
+    } else {
+        minuteStr = QString::number(minute);
+    }
+    if(sec < 10) {
+        secStr = "0" + QString::number(sec);
+    } else {
+        secStr = QString::number(sec);
+    }
+
+    QString timeStr;
+    timeStr = "<font size=15 face=Consolas>" + hourStr + ":" + minuteStr + ":" + secStr + "</font>";
+    m_lTickTime->setText(timeStr);
+}
+
+void Dialog::timeDisplay()
+{
+    if(m_chbTimer->isChecked()) {
+        timeCountdown();
+    } else {
+        timeCountUp();
+    }
 }
 
 Dialog::Dialog(QString title, QWidget *parent)
@@ -396,6 +517,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_isBright(true)
     , m_isRecording(false)
     , m_BlinkTimeRec(new QTimer(this))
+    , m_TimeDisplay(new QTimer(this))
 {
     setWindowTitle(title);
     view();
@@ -433,6 +555,13 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_BlinkTimeRxColor->setInterval(BLINKTIMERX);
 
     m_BlinkTimeRec->setInterval(BLINKTIMEREC);
+
+    m_TimeDisplay->setInterval(TIMEDISPLAY);
+
+    QString expr = "[0-5][0-9]:[0-5][0-9]:[0-5][0-9]";
+    QRegExp regExpr(expr);
+    QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
+    m_leTimer->setValidator(validator);
 }
 
 Dialog::~Dialog()

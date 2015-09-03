@@ -24,9 +24,9 @@ void DataHandler::dumpDataToFile(QString fileName, QMultiMap<QString, QList<QStr
         return;
     }
     QFile file(fileName);
-    if(!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
 #ifdef DEBUG
-        qDebug() << "File Error open:" << fileName;
+        qDebug() << "File error open:" << fileName;
         qDebug() << file.errorString();
 #endif
         return;
@@ -48,6 +48,7 @@ void DataHandler::dumpDataToFile(QString fileName, QMultiMap<QString, QList<QStr
     for(int i = 11; i < data.value("VOLT").size() && i < data.value("SEC").size(); ++i) {
         out << ",,," << data.value("SEC").at(i) << "," << data.value("VOLT").at(i) << "\n";
     }
+    out.flush();
 
     file.close();
     data.clear();

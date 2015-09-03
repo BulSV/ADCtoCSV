@@ -56,6 +56,8 @@ class Dialog : public QWidget
     bool m_isRecording;
     QTimer *m_BlinkTimeRec;
 
+    QTimer *m_TimeDisplay;
+
     void view();
     void connections();
 private slots:
@@ -71,6 +73,9 @@ private slots:
     void blinkRecButton();
     void setRate();
     void stopRec();
+    void timeCountUp();
+    void timeCountdown();
+    void timeDisplay();
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();
