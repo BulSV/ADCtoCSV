@@ -9,6 +9,7 @@
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QTimer>
+#include <QTime>
 #include <QSerialPort>
 #include <QMultiMap>
 #include "ComPort.h"
@@ -29,6 +30,8 @@ class Dialog : public QWidget
     QLabel *m_lTickTime;
     QPushButton *m_bRec;
     QSpinBox *m_sbSamplRate;
+    QPushButton *m_bSetRate;
+    QPushButton *m_bStopRec;
 
     QLineEdit *m_leSerialNum;
     QLineEdit *m_leModelName;
@@ -44,6 +47,14 @@ class Dialog : public QWidget
     QTimer *m_BlinkTimeTxColor;
     QTimer *m_BlinkTimeRxColor;
 
+    QList<QString> m_VoltList;
+    QList<QString> m_SecondList;
+    QTime *m_CurrentTime;
+    QMultiMap<QString, QList<QString> > m_Data;
+
+    bool m_isBright;
+    QTimer *m_BlinkTimeRec;
+
     void view();
     void connections();
 private slots:
@@ -56,6 +67,9 @@ private slots:
     void colorRxNone();
     void colorIsTx();
     void colorTxNone();
+    void blinkRecButton();
+    void setRate();
+    void stopRec();
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();

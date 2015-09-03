@@ -1,6 +1,6 @@
 QT += widgets serialport
 
-#CONFIG += C++11
+CONFIG += C++11
 
 TEMPLATE = app
 #win32:RC_FILE = ADCtoCSV.rc
@@ -38,13 +38,15 @@ HEADERS += \
     ComPort.h \
     IProtocol.h \
     ADCtoCSVProtocol.h \
-    Dialog.h
+    Dialog.h \
+    DataHandler.h
 
 SOURCES += \
     ComPort.cpp \
     main.cpp \
     ADCtoCSVProtocol.cpp \
-    Dialog.cpp
+    Dialog.cpp \
+    DataHandler.cpp
 
 RESOURCES += \
     ADCtoCSV.qrc

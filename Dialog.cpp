@@ -6,6 +6,7 @@
 #include <QSerialPortInfo>
 #include <QPalette>
 #include <QApplication>
+#include <QFont>
 
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
@@ -14,29 +15,34 @@
 #define BLINKTIMETX 200 // ms
 #define BLINKTIMERX 500 // ms
 
+#define BLINKTIMEREC 1000 // ms
+
 void Dialog::view()
 {
     QGridLayout *portLayout = new QGridLayout;
-    portLayout->addWidget(new QLabel("Port", this), 0, 0);
-    portLayout->addWidget(m_cbPort, 0, 1);
-    portLayout->addWidget(new QLabel("Baud", this), 1, 0);
-    portLayout->addWidget(m_cbBaud, 1, 1);
-    portLayout->addWidget(m_bStart, 2, 0);
-    portLayout->addWidget(m_bStop, 2, 1);
-    portLayout->addWidget(m_lTx, 3, 0);
-    portLayout->addWidget(m_lRx, 3, 1);
-//    portLayout->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 4, 2, 2);
+    portLayout->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 0, 2, 2, Qt::AlignCenter);
+    portLayout->addWidget(new QLabel("Port", this), 2, 0);
+    portLayout->addWidget(m_cbPort, 2, 1);
+    portLayout->addWidget(new QLabel("Baud", this), 3, 0);
+    portLayout->addWidget(m_cbBaud, 3, 1);
+    portLayout->addWidget(m_bStart, 4, 0);
+    portLayout->addWidget(m_bStop, 4, 1);
+    portLayout->addWidget(m_lTx, 5, 0);
+    portLayout->addWidget(m_lRx, 5, 1);
     portLayout->setSpacing(5);
 
+    m_sbSamplRate->setMaximumWidth(100);
+    m_leTimer->setMaximumWidth(100);
+
     QGridLayout *controlLayout = new QGridLayout;
-    controlLayout->addWidget(m_chbTimer, 0, 0);
-    controlLayout->addWidget(m_leTimer, 0, 1);
-    controlLayout->addWidget(m_lTickTime, 1, 0, 1, 1, Qt::AlignCenter);
-    controlLayout->addWidget(m_bRec, 1, 1);
-    controlLayout->addWidget(new QLabel("Sampling Rate, kHz", this), 2, 0);
-    controlLayout->addWidget(m_sbSamplRate, 2, 1);
-    controlLayout->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 3, 0, 2, 2, Qt::AlignCenter);
-//    controlLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding), 3, 0);
+    controlLayout->addWidget(new QLabel("Sampling Rate, kHz", this), 0, 0);
+    controlLayout->addWidget(m_sbSamplRate, 0, 1);
+    controlLayout->addWidget(m_bSetRate, 1, 0, 1, 2);
+    controlLayout->addWidget(m_chbTimer, 3, 0);
+    controlLayout->addWidget(m_leTimer, 3, 1);
+    controlLayout->addWidget(m_lTickTime, 4, 0, 1, 2, Qt::AlignCenter);
+    controlLayout->addWidget(m_bRec, 5, 0);
+    controlLayout->addWidget(m_bStopRec, 5, 1);
     controlLayout->setSpacing(5);
 
     QGridLayout *infoLayout = new QGridLayout;
@@ -54,8 +60,8 @@ void Dialog::view()
 
     QGridLayout *allLayouts = new QGridLayout;
     allLayouts->addItem(portLayout, 0, 0);
-    allLayouts->addItem(infoLayout, 0, 1);
-    allLayouts->addItem(controlLayout, 0, 2);
+    allLayouts->addItem(controlLayout, 0, 1);
+    allLayouts->addItem(infoLayout, 1, 0, 1, 2);
     allLayouts->setSpacing(5);
 
     setLayout(allLayouts);
@@ -77,6 +83,9 @@ void Dialog::connections()
     connect(m_BlinkTimeRxNone, SIGNAL(timeout()), this, SLOT(colorRxNone()));
 
     connect(m_bRec, SIGNAL(clicked()), this, SLOT(record()));
+    connect(m_BlinkTimeRec, SIGNAL(timeout()), this, SLOT(blinkRecButton()));
+    connect(m_bStopRec, SIGNAL(clicked()), this, SLOT(stopRec()));
+    connect(m_bSetRate, SIGNAL(clicked()), this, SLOT(setRate()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -84,7 +93,9 @@ void Dialog::connections()
 
 void Dialog::toggleTimer(bool isEnabled)
 {
-    m_leTimer->setEnabled(isEnabled);
+    if(m_bRec->isEnabled()) {
+        m_leTimer->setEnabled(isEnabled);
+    }
 }
 
 void Dialog::stop()
@@ -96,9 +107,21 @@ void Dialog::stop()
     m_BlinkTimeRxColor->stop();
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
+    m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
     m_bStop->setEnabled(false);
     m_bStart->setEnabled(true);
     m_Protocol->resetProtocol();
+
+    m_leSerialNum->setEnabled(true);
+    m_leModelName->setEnabled(true);
+    m_leTempLoad->setEnabled(true);
+    m_leTempEnv->setEnabled(true);
+    m_leTestName->setEnabled(true);
+    m_sbSamplRate->setEnabled(true);
+    m_bSetRate->setEnabled(true);
+    m_bRec->setEnabled(true);
+
+    m_BlinkTimeRec->stop();
 }
 
 void Dialog::start()
@@ -144,24 +167,33 @@ void Dialog::received(bool isReceived)
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
-//        m_DisplayList = m_Protocol->getReadedData();
+        m_VoltList.push_back(m_Protocol->getReadedData().value("VOLT"));
+        m_SecondList.push_back(QString::number(m_CurrentTime->elapsed()/1000));
     }
 }
 
 void Dialog::record()
 {
     if(m_Port->isOpen()) {
-        m_bRec->setIcon(QIcon(":/Resources/stopRecToFile.png"));
-        QMultiMap<QString, QString> dataTemp;
+        m_leSerialNum->setEnabled(false);
+        m_leModelName->setEnabled(false);
+        m_leTempLoad->setEnabled(false);
+        m_leTempEnv->setEnabled(false);
+        m_leTestName->setEnabled(false);
+        m_sbSamplRate->setEnabled(false);
+        m_bSetRate->setEnabled(false);
+        m_bRec->setEnabled(false);
+        m_bStopRec->setEnabled(true);
 
-        if(!m_BlinkTimeTxColor->isActive() && !m_BlinkTimeTxNone->isActive()) {
-            m_BlinkTimeTxColor->start();
-            m_lTx->setStyleSheet("background: red; font: bold; font-size: 10pt");
+        if(m_chbTimer->isChecked()) {
+            m_leTimer->setEnabled(false);
         }
 
-        dataTemp.insert("RATE", m_sbSamplRate->text());
-        m_Protocol->setDataToWrite(dataTemp);
-        m_Protocol->writeData();
+        if(!m_BlinkTimeRec->isActive()) {
+            m_bRec->setIcon(QIcon(":/Resources/startRecToFileBlink.png"));
+            m_isBright = false;
+            m_BlinkTimeRec->start();
+        }
     }
 }
 
@@ -189,8 +221,53 @@ void Dialog::colorTxNone()
     m_BlinkTimeTxNone->stop();
 }
 
+void Dialog::blinkRecButton()
+{
+    if(m_isBright) {
+        m_isBright = false;
+        m_bRec->setIcon(QIcon(":/Resources/startRecToFileBlink.png"));
+    } else {
+        m_isBright = true;
+        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+    }
+}
+
+void Dialog::setRate()
+{
+    if(m_Port->isOpen()) {
+        QMultiMap<QString, QString> dataTemp;
+        dataTemp.insert("RATE", m_sbSamplRate->text());
+        m_Protocol->setDataToWrite(dataTemp);
+        m_Protocol->writeData();
+
+        if(!m_BlinkTimeTxColor->isActive() && !m_BlinkTimeTxNone->isActive()) {
+            m_BlinkTimeTxColor->start();
+            m_lTx->setStyleSheet("background: red; font: bold; font-size: 10pt");
+        }
+    }
+}
+
+void Dialog::stopRec()
+{
+    m_BlinkTimeRec->stop();
+    m_bStopRec->setEnabled(false);
+    m_bRec->setEnabled(true);
+    m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+    m_isBright = true;
+    m_sbSamplRate->setEnabled(true);
+    m_bSetRate->setEnabled(true);
+    m_leSerialNum->setEnabled(true);
+    m_leModelName->setEnabled(true);
+    m_leTempLoad->setEnabled(true);
+    m_leTempEnv->setEnabled(true);
+    m_leTestName->setEnabled(true);
+    if(m_chbTimer->isChecked()) {
+        m_leTimer->setEnabled(true);
+    }
+}
+
 Dialog::Dialog(QString title, QWidget *parent)
-    : QWidget(parent)
+    : QWidget(parent, Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint)
     , m_cbPort(new QComboBox(this))
     , m_cbBaud(new QComboBox(this))
     , m_bStart(new QPushButton("Start", this))
@@ -202,6 +279,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lTickTime(new QLabel("<font size=20 face=Consolas>00:00</font>", this))
     , m_bRec(new QPushButton(QIcon(":/Resources/startRecToFile.png"), QString::null, this))
     , m_sbSamplRate(new QSpinBox(this))
+    , m_bSetRate(new QPushButton("Set Rate", this))
+    , m_bStopRec(new QPushButton(QIcon(":/Resources/stopRecToFile.png"), QString::null, this))
     , m_leSerialNum(new QLineEdit(this))
     , m_leModelName(new QLineEdit(this))
     , m_leTempLoad(new QLineEdit(this))
@@ -214,6 +293,9 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_BlinkTimeRxNone(new QTimer(this))
     , m_BlinkTimeTxColor(new QTimer(this))
     , m_BlinkTimeRxColor(new QTimer(this))
+    , m_CurrentTime(new QTime())
+    , m_isBright(true)
+    , m_BlinkTimeRec(new QTimer(this))
 {
     setWindowTitle(title);
     view();
@@ -223,6 +305,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_leTimer->setInputMask("00:00;0");
     m_leTimer->setAlignment(Qt::AlignCenter);
+    QFont font("Consolas", 20);
+    m_leTimer->setFont(font);
 
     QStringList portsNames;
 
@@ -238,16 +322,19 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_cbBaud->addItems(bauds);
 
     m_leTimer->setEnabled(false);
-
     m_bStop->setEnabled(false);
+    m_bStopRec->setEnabled(false);
 
     m_BlinkTimeTxNone->setInterval(BLINKTIMETX);
     m_BlinkTimeRxNone->setInterval(BLINKTIMERX);
     m_BlinkTimeTxColor->setInterval(BLINKTIMETX);
     m_BlinkTimeRxColor->setInterval(BLINKTIMERX);
+
+    m_BlinkTimeRec->setInterval(BLINKTIMEREC);
 }
 
 Dialog::~Dialog()
 {
     m_Port->close();
+    delete m_CurrentTime;
 }
