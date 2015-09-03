@@ -191,8 +191,10 @@ void Dialog::received(bool isReceived)
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
-        m_VoltList.push_back(QString::number(m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR));
-        m_SecondList.push_back(QString::number(m_CurrentTime->elapsed()/1000));
+        if(m_isRecording) {
+            m_VoltList.push_back(QString::number(m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR));
+            m_SecondList.push_back(QString::number(m_CurrentTime->elapsed()/1000.0));
+        }
     }
 }
 
@@ -222,7 +224,7 @@ void Dialog::record()
             m_BlinkTimeRec->start();
         }
 
-        m_CurrentTime->restart();
+        m_CurrentTime->start();
     }
 }
 
