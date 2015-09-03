@@ -12,6 +12,8 @@
 #include <QApplication>
 #include <QFont>
 
+#include "DataHandler.h"
+
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
 #define BYTESLENGTH 3
@@ -20,6 +22,8 @@
 #define BLINKTIMERX 500 // ms
 
 #define BLINKTIMEREC 1000 // ms
+
+#define VOLTFACTOR 2.2/4096 // V
 
 void Dialog::view()
 {
@@ -187,7 +191,7 @@ void Dialog::received(bool isReceived)
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
-        m_VoltList.push_back(m_Protocol->getReadedData().value("VOLT"));
+        m_VoltList.push_back(QString::number(m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR));
         m_SecondList.push_back(QString::number(m_CurrentTime->elapsed()/1000));
     }
 }
@@ -217,6 +221,8 @@ void Dialog::record()
             m_isBright = false;
             m_BlinkTimeRec->start();
         }
+
+        m_CurrentTime->restart();
     }
 }
 
@@ -295,6 +301,66 @@ void Dialog::stopRec()
     }
 
     m_isRecording = false;
+    /*
+    "NUM", "NAME", "LOAD", "ENV", "TEST", "TIME", "RATE", "SEC", "VOLT"
+    */
+    QList<QString> dataList;
+
+    dataList.push_back(m_leTestName->text());
+    m_Data.insert("TEST", dataList);
+    dataList.clear();
+
+    dataList.push_back(m_leModelName->text());
+    m_Data.insert("NAME", dataList);
+    dataList.clear();
+
+    dataList.push_back(m_leSerialNum->text());
+    m_Data.insert("NUM", dataList);
+    dataList.clear();
+
+    dataList.push_back(m_leTempLoad->text());
+    m_Data.insert("LOAD", dataList);
+    dataList.clear();
+
+    dataList.push_back(m_leTempEnv->text());
+    m_Data.insert("ENV", dataList);
+    dataList.clear();
+
+    dataList.push_back(m_sbSamplRate->text());
+    m_Data.insert("RATE", dataList);
+    dataList.clear();
+
+    dataList.push_back(m_SecondList.last());
+    m_Data.insert("TIME", dataList);
+    dataList.clear();
+
+    m_Data.insert("VOLT", m_VoltList);
+    m_Data.insert("SEC", m_SecondList);
+
+    QString fileName;
+    fileName = "ADC";
+    if(!m_leSerialNum->text().isEmpty()) {
+        fileName += "_" + m_leSerialNum->text();
+    }
+    if(!m_leModelName->text().isEmpty()) {
+        fileName += "_" + m_leModelName->text();
+    }
+    if(!m_leTempLoad->text().isEmpty()) {
+        fileName += "_" + m_leTempLoad->text();
+    }
+    if(!m_leTempEnv->text().isEmpty()) {
+        fileName += "_" + m_leTempEnv->text();
+    }
+    if(!m_leTestName->text().isEmpty()) {
+        fileName += "_" + m_leTestName->text();
+    }
+    fileName += ".CSV";
+#ifdef DEBUG
+    qDebug() << "\n\n\n\n\n\n\n\n\n\n\n\n\nfileName" << fileName << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+#endif
+
+    DataHandler dataHandler;
+    dataHandler.dumpDataToFile(fileName, m_Data);
 }
 
 Dialog::Dialog(QString title, QWidget *parent)
