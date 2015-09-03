@@ -53,6 +53,7 @@ class Dialog : public QWidget
     QMultiMap<QString, QList<QString> > m_Data;
 
     bool m_isBright;
+    bool m_isRecording;
     QTimer *m_BlinkTimeRec;
 
     void view();

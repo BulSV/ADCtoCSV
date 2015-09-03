@@ -1,3 +1,7 @@
+#ifdef DEBUG
+#include <QDebug>
+#endif
+
 #include "Dialog.h"
 #include <QGridLayout>
 #include <QIcon>
@@ -93,7 +97,7 @@ void Dialog::connections()
 
 void Dialog::toggleTimer(bool isEnabled)
 {
-    if(m_bRec->isEnabled()) {
+    if(!m_isRecording) {
         m_leTimer->setEnabled(isEnabled);
     }
 }
@@ -119,9 +123,21 @@ void Dialog::stop()
     m_leTestName->setEnabled(true);
     m_sbSamplRate->setEnabled(true);
     m_bSetRate->setEnabled(true);
-    m_bRec->setEnabled(true);
+    m_cbPort->setEnabled(true);
+    m_cbBaud->setEnabled(true);
+    m_bSetRate->setEnabled(false);
 
     m_BlinkTimeRec->stop();
+
+    if(m_chbTimer->isChecked()) {
+        m_leTimer->setEnabled(true);
+    }
+
+    m_bStopRec->setEnabled(false);
+    if(m_isRecording) {
+        stopRec();
+    }
+    m_bRec->setEnabled(false);
 }
 
 void Dialog::start()
@@ -149,6 +165,10 @@ void Dialog::start()
 
         m_bStart->setEnabled(false);
         m_bStop->setEnabled(true);
+        m_bSetRate->setEnabled(true);
+        m_bRec->setEnabled(true);
+        m_cbPort->setEnabled(false);
+        m_cbBaud->setEnabled(false);
         m_lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
         m_lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
     }
@@ -184,6 +204,8 @@ void Dialog::record()
         m_bSetRate->setEnabled(false);
         m_bRec->setEnabled(false);
         m_bStopRec->setEnabled(true);
+
+        m_isRecording = true;
 
         if(m_chbTimer->isChecked()) {
             m_leTimer->setEnabled(false);
@@ -249,11 +271,16 @@ void Dialog::setRate()
 
 void Dialog::stopRec()
 {
+#ifdef DEBUG
+    qDebug() << "Stopping recording...";
+#endif
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
     m_bRec->setEnabled(true);
     m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+
     m_isBright = true;
+
     m_sbSamplRate->setEnabled(true);
     m_bSetRate->setEnabled(true);
     m_leSerialNum->setEnabled(true);
@@ -261,9 +288,12 @@ void Dialog::stopRec()
     m_leTempLoad->setEnabled(true);
     m_leTempEnv->setEnabled(true);
     m_leTestName->setEnabled(true);
+
     if(m_chbTimer->isChecked()) {
         m_leTimer->setEnabled(true);
     }
+
+    m_isRecording = false;
 }
 
 Dialog::Dialog(QString title, QWidget *parent)
@@ -295,6 +325,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_BlinkTimeRxColor(new QTimer(this))
     , m_CurrentTime(new QTime())
     , m_isBright(true)
+    , m_isRecording(false)
     , m_BlinkTimeRec(new QTimer(this))
 {
     setWindowTitle(title);
@@ -324,6 +355,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_leTimer->setEnabled(false);
     m_bStop->setEnabled(false);
     m_bStopRec->setEnabled(false);
+    m_bSetRate->setEnabled(false);
+    m_bRec->setEnabled(false);
 
     m_BlinkTimeTxNone->setInterval(BLINKTIMETX);
     m_BlinkTimeRxNone->setInterval(BLINKTIMERX);
