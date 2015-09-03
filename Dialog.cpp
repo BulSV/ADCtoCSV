@@ -13,6 +13,7 @@
 #include <QFont>
 #include <QRegExp>
 #include <QRegExpValidator>
+#include <QCompleter>
 
 #include "DataHandler.h"
 
@@ -545,6 +546,22 @@ Dialog::Dialog(QString title, QWidget *parent)
     QRegExp regExpr(expr);
     QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
     m_leTimer->setValidator(validator);
+
+    QString exprT = "(\\-){,1}(\\d){,2}";
+    QRegExp regExprT(exprT);
+    QRegExpValidator *validatorT = new QRegExpValidator(regExprT, this);
+    m_leTempLoad->setValidator(validatorT);
+    m_leTempEnv->setValidator(validatorT);
+
+    // [1-0]Temperary!!!
+    m_leModelName->setEnabled(false);
+    m_leModelName->setText("Radiometric Receiver Module-5");
+    QStringList completerList;
+    completerList << "Sensitivity" << "Voltage Stability";
+    QCompleter *completer = new QCompleter(completerList, this);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    m_leTestName->setCompleter(completer);
+    // [1-0]Temperary!!!
 }
 
 Dialog::~Dialog()
