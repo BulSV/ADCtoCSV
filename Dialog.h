@@ -60,6 +60,9 @@ class Dialog : public QWidget
 
     void view();
     void connections();
+    void timeCountUp();
+    void timeCountdown();
+    void setTime(int sec, int minute, int hour);
 private slots:
     void toggleTimer(bool isEnabled);
     void stop();
@@ -72,14 +75,11 @@ private slots:
     void colorTxNone();
     void blinkRecButton();
     void setRate();
-    void stopRec();
-    void timeCountUp();
-    void timeCountdown();
+    void stopRec();    
     void timeDisplay();
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
-    ~Dialog();
-
+    ~Dialog();    
 signals:
 
 public slots:

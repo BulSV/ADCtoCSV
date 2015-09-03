@@ -377,14 +377,8 @@ void Dialog::stopRec()
 #endif
 }
 
-void Dialog::timeCountUp()
+void Dialog::setTime(int sec, int minute, int hour)
 {
-    int time = m_CurrentTime->elapsed()/1000;
-    int sec = time % 60;
-    time /= 60;
-    int minute = time % 60;
-    int hour = time / 60;
-
     QString hourStr;
     QString minuteStr;
     QString secStr;
@@ -408,6 +402,17 @@ void Dialog::timeCountUp()
     QString timeStr;
     timeStr = "<font size=15 face=Consolas>" + hourStr + ":" + minuteStr + ":" + secStr + "</font>";
     m_lTickTime->setText(timeStr);
+}
+
+void Dialog::timeCountUp()
+{
+    int time = m_CurrentTime->elapsed()/1000;
+    int sec = time % 60;
+    time /= 60;
+    int minute = time % 60;
+    int hour = time / 60;
+
+    setTime(sec, minute, hour);
 }
 
 void Dialog::timeCountdown()
@@ -452,29 +457,7 @@ void Dialog::timeCountdown()
     qDebug() << "sec:" << sec;
     qDebug() << "time:" << time;
 #endif
-    QString hourStr;
-    QString minuteStr;
-    QString secStr;
-
-    if(hour < 10) {
-        hourStr = "0" + QString::number(hour);
-    } else {
-        hourStr = QString::number(hour);
-    }
-    if(minute < 10) {
-        minuteStr = "0" + QString::number(minute);
-    } else {
-        minuteStr = QString::number(minute);
-    }
-    if(sec < 10) {
-        secStr = "0" + QString::number(sec);
-    } else {
-        secStr = QString::number(sec);
-    }
-
-    QString timeStr;
-    timeStr = "<font size=15 face=Consolas>" + hourStr + ":" + minuteStr + ":" + secStr + "</font>";
-    m_lTickTime->setText(timeStr);
+    setTime(sec, minute, hour);
 }
 
 void Dialog::timeDisplay()
