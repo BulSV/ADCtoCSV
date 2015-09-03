@@ -3,7 +3,7 @@ QT += widgets serialport
 CONFIG += C++11
 
 TEMPLATE = app
-#win32:RC_FILE = ADCtoCSV.rc
+win32:RC_FILE = ADCtoCSV.rc
 #CONFIG += console
 CONFIG(debug, debug|release) {
     unix:DESTDIR = ../debug/unix

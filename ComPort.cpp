@@ -1,3 +1,7 @@
+#ifdef DEBUG
+#include <QDebug>
+#endif
+
 #include "ComPort.h"
 #include <QApplication>
 #include <QTime>
@@ -41,6 +45,9 @@ void ComPort::readData()
 
                 if((m_counter == itsPacketLenght)
                         && !(itsReadData.at(itsPacketLenght - 2) & 0xF0)) {
+#ifdef DEBUG
+                    qDebug() << itsReadData.toHex();
+#endif
                     emit DataIsReaded(true);
                     emit ReadedData(itsReadData);
 
@@ -52,6 +59,9 @@ void ComPort::readData()
                     m_counter = 0;
                 }
             } else {
+#ifdef DEBUG
+                qDebug() << "Reading failure!";
+#endif
                 emit DataIsReaded(false);
 
                 itsReadData.clear();

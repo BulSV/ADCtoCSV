@@ -7,5 +7,8 @@
         <file>Resources/stopRecToFile.png</file>
         <file>Resources/startRecToFileBlink.png</file>
         <file>Resources/startRecToFileBlink.svg</file>
+        <file>Resources/ADCtoCSV.ico</file>
+        <file>Resources/ADCtoCSV.png</file>
+        <file>Resources/ADCtoCSV.svg</file>
     </qresource>
 </RCC>

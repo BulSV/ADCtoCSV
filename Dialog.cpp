@@ -209,6 +209,7 @@ void Dialog::record()
 
         if(m_chbTimer->isChecked()) {
             m_leTimer->setEnabled(false);
+            m_bStopRec->setEnabled(false);
         }
 
         if(!m_BlinkTimeRec->isActive()) {
@@ -306,7 +307,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lRx(new QLabel("       Rx", this))
     , m_chbTimer(new QCheckBox("Timer", this))
     , m_leTimer(new QLineEdit(this))
-    , m_lTickTime(new QLabel("<font size=20 face=Consolas>00:00</font>", this))
+    , m_lTickTime(new QLabel("<font size=15 face=Consolas>00:00:00</font>", this))
     , m_bRec(new QPushButton(QIcon(":/Resources/startRecToFile.png"), QString::null, this))
     , m_sbSamplRate(new QSpinBox(this))
     , m_bSetRate(new QPushButton("Set Rate", this))
@@ -334,9 +335,9 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
-    m_leTimer->setInputMask("00:00;0");
+    m_leTimer->setInputMask("00:00:00;0");
     m_leTimer->setAlignment(Qt::AlignCenter);
-    QFont font("Consolas", 20);
+    QFont font("Consolas", 15);
     m_leTimer->setFont(font);
 
     QStringList portsNames;
