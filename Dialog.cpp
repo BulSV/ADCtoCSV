@@ -28,7 +28,7 @@
 
 #define TIMEDISPLAY 1000 // ms
 
-#define VOLTFACTOR 5*2.2/4096 // V
+#define VOLTFACTOR 5.174*2.2/4096.0 // V
 
 void Dialog::view()
 {
