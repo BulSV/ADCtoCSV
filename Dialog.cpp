@@ -200,7 +200,6 @@ void Dialog::received(bool isReceived)
 
         if(m_isRecording) {
             m_VoltList.push_back(QString::number(m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR));
-            m_SecondList.push_back(QString::number(static_cast<double>(m_CurrentTime->elapsed()/1000.0)));
         }
     }
 }
@@ -294,6 +293,10 @@ void Dialog::stopRec()
 #ifdef DEBUG
     qDebug() << "Stopping recording...";
 #endif
+    double d_time = m_CurrentTime->elapsed()/(1000.0*m_VoltList.size());
+    for(int i = 0; i < m_VoltList.size(); ++i) {
+        m_SecondList.push_back(QString::number((i + 1)*d_time));
+    }
     m_TimeDisplay->stop();
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
