@@ -231,6 +231,8 @@ void Dialog::record()
             m_isBright = false;
             m_BlinkTimeRec->start();
         }
+        m_SecondList.clear();
+        m_VoltList.clear();
 
         m_CurrentTime->start();
         m_TimeDisplay->start();
