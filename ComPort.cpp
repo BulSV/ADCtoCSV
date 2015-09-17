@@ -45,7 +45,7 @@ void ComPort::readData()
 
                 if((m_counter == itsPacketLenght)
                         && !(itsReadData.at(itsPacketLenght - 2) & 0xF0)) {
-#ifdef DEBUG
+#ifdef DEBUG1
                     qDebug() << itsReadData.toHex();
 #endif
                     emit DataIsReaded(true);
@@ -59,7 +59,7 @@ void ComPort::readData()
                     m_counter = 0;
                 }
             } else {
-#ifdef DEBUG
+#ifdef DEBUG1
                 qDebug() << "Reading failure!";
 #endif
                 emit DataIsReaded(false);

@@ -12,6 +12,8 @@
 #include <QTime>
 #include <QSerialPort>
 #include <QMultiMap>
+#include <QRegExp>
+#include <QRegExpValidator>
 #include "ComPort.h"
 #include "ADCtoCSVProtocol.h"
 

@@ -11,8 +11,6 @@
 #include <QPalette>
 #include <QApplication>
 #include <QFont>
-#include <QRegExp>
-#include <QRegExpValidator>
 #include <QCompleter>
 
 #include "DataHandler.h"
@@ -110,6 +108,7 @@ void Dialog::toggleTimer(bool isEnabled)
 {
     if(!m_isRecording) {
         m_leTimer->setEnabled(isEnabled);
+        m_leTimer->setInputMask("00:00:00;#");
     }
 }
 
@@ -223,7 +222,6 @@ void Dialog::record()
         if(m_chbTimer->isChecked()) {
             m_leTimer->setEnabled(false);
             m_bStopRec->setEnabled(false);
-            m_lTickTime->setText(m_leTimer->text());
         }
 
         if(!m_BlinkTimeRec->isActive()) {
@@ -379,6 +377,9 @@ void Dialog::stopRec()
 
     DataHandler dataHandler;
     dataHandler.dumpDataToFile(fileName, m_Data);
+
+    m_SecondList.clear();
+    m_VoltList.clear();
 #ifdef DEBUG
     qDebug() << "DATA SIZE:" << m_Data.size();
 #endif
@@ -407,7 +408,7 @@ void Dialog::setTime(int sec, int minute, int hour)
     }
 
     QString timeStr;
-    timeStr = "<font size=15 face=Consolas>" + hourStr + ":" + minuteStr + ":" + secStr + "</font>";
+    timeStr = hourStr + ":" + minuteStr + ":" + secStr;
     m_lTickTime->setText(timeStr);
 }
 
@@ -427,6 +428,7 @@ void Dialog::timeCountdown()
     QStringList timeList = m_leTimer->text().split(':');
 #ifdef DEBUG
     qDebug() << "TIMER TEXT:" << m_leTimer->text();
+    qDebug() << "TIME LIST:" << timeList;
 #endif
     if(timeList.at(0).isEmpty()) {
         timeList.replace(0, "00");
@@ -437,6 +439,9 @@ void Dialog::timeCountdown()
     if(timeList.at(2).isEmpty()) {
         timeList.replace(2, "00");
     }
+#ifdef DEBUG
+    qDebug() << "TIME LIST:" << timeList;
+#endif
     bool ok;
     int hour = timeList.at(0).toInt(&ok);
     int minute = timeList.at(1).toInt(&ok);
@@ -486,7 +491,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lRx(new QLabel("       Rx", this))
     , m_chbTimer(new QCheckBox("Timer", this))
     , m_leTimer(new QLineEdit(this))
-    , m_lTickTime(new QLabel("<font size=15 face=Consolas>00:00:00</font>", this))
+    , m_lTickTime(new QLabel("00:00:00", this))
     , m_bRec(new QPushButton(QIcon(":/Resources/startRecToFile.png"), QString::null, this))
     , m_sbSamplRate(new QSpinBox(this))
     , m_bSetRate(new QPushButton("Set Rate", this))
@@ -516,10 +521,15 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
-    m_leTimer->setInputMask("00:00:00;0");
     m_leTimer->setAlignment(Qt::AlignCenter);
     QFont font("Consolas", 15);
     m_leTimer->setFont(font);
+    QRegExp regExpr("[0-5][0-9]:[0-5][0-9]:[0-5][0-9]");
+    QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
+    m_leTimer->setValidator(validator);
+    m_leTimer->setInputMask("00:00:00;#");
+
+    m_lTickTime->setFont(font);
 
     QStringList portsNames;
 
@@ -548,11 +558,6 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_BlinkTimeRec->setInterval(BLINKTIMEREC);
 
     m_TimeDisplay->setInterval(TIMEDISPLAY);
-
-    QString expr = "[0-5][0-9]:[0-5][0-9]:[0-5][0-9]";
-    QRegExp regExpr(expr);
-    QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
-    m_leTimer->setValidator(validator);
 
     QString exprT = "(\\-){,1}(\\d){,2}";
     QRegExp regExprT(exprT);
