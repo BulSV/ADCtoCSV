@@ -200,6 +200,7 @@ void Dialog::received(bool isReceived)
 
         if(m_isRecording) {
             m_VoltList.push_back(QString::number(m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR));
+            m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
         }
     }
 }
@@ -293,7 +294,7 @@ void Dialog::stopRec()
 #ifdef DEBUG
     qDebug() << "Stopping recording...";
 #endif
-    double d_time = m_CurrentTime->elapsed()/(1000.0*m_VoltList.size());
+    double d_time = m_LastRecieveTime/m_VoltList.size();
     for(int i = 0; i < m_VoltList.size(); ++i) {
         m_SecondList.push_back(QString::number((i + 1)*d_time));
     }
@@ -503,6 +504,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_BlinkTimeTxColor(new QTimer(this))
     , m_BlinkTimeRxColor(new QTimer(this))
     , m_CurrentTime(new QTime())
+    , m_LastRecieveTime(0.0)
     , m_isBright(true)
     , m_isRecording(false)
     , m_BlinkTimeRec(new QTimer(this))

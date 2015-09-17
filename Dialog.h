@@ -50,6 +50,7 @@ class Dialog : public QWidget
     QList<QString> m_VoltList;
     QList<QString> m_SecondList;
     QTime *m_CurrentTime;
+    double m_LastRecieveTime;
     QMultiMap<QString, QList<QString> > m_Data;
 
     bool m_isBright;
@@ -75,11 +76,11 @@ private slots:
     void colorTxNone();
     void blinkRecButton();
     void setRate();
-    void stopRec();    
+    void stopRec();
     void timeDisplay();
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
-    ~Dialog();    
+    ~Dialog();
 signals:
 
 public slots:
