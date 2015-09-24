@@ -63,10 +63,10 @@ void Dialog::view()
     infoLayout->addWidget(m_leSerialNum, 1, 1);
     infoLayout->addWidget(new QLabel("Model Name", this), 2, 0);
     infoLayout->addWidget(m_leModelName, 2, 1);
-    infoLayout->addWidget(new QLabel("Temperature of Load, °C", this), 3, 0);
-    infoLayout->addWidget(m_leTempLoad, 3, 1);
-    infoLayout->addWidget(new QLabel("Temperature of Environment, °C", this), 4, 0);
-    infoLayout->addWidget(m_leTempEnv, 4, 1);
+    infoLayout->addWidget(new QLabel("Temperature of Environment, °C", this), 3, 0);
+    infoLayout->addWidget(m_leTempEnv, 3, 1);
+    infoLayout->addWidget(new QLabel("Temperature of Load, °C", this), 4, 0);
+    infoLayout->addWidget(m_leTempLoad, 4, 1);
     infoLayout->setSpacing(5);
 
     QGridLayout *allLayouts = new QGridLayout;
@@ -358,17 +358,17 @@ void Dialog::stopRec()
     if(!m_leTestName->text().isEmpty()) {
         fileName += "_" + m_leTestName->text();
     }
-    if(!m_leSerialNum->text().isEmpty()) {
-        fileName += "_" + m_leSerialNum->text();
-    }
     if(!m_leModelName->text().isEmpty()) {
         fileName += "_" + m_leModelName->text();
     }
-    if(!m_leTempLoad->text().isEmpty()) {
-        fileName += "_" + m_leTempLoad->text();
+    if(!m_leSerialNum->text().isEmpty()) {
+        fileName += "_#" + m_leSerialNum->text();
     }
     if(!m_leTempEnv->text().isEmpty()) {
         fileName += "_" + m_leTempEnv->text();
+    }
+    if(!m_leTempLoad->text().isEmpty()) {
+        fileName += "_" + m_leTempLoad->text();
     }
     fileName += ".CSV";
 #ifdef DEBUG
