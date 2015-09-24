@@ -28,7 +28,6 @@ void DataHandler::dumpDataToFile(QString fileName, QMultiMap<QString, QList<QStr
     QFile file(fileName);
     if(file.exists()) {
         QMessageBox::warning(0, "Write File Error", "It seems file already exist!\nIt will be saved by name:" + fileName.replace(".CSV", "_" + QDateTime::currentDateTime().toString("yyyy.MM.dd_hh.mm.ss") + ".CSV"));
-//        fileName.replace(".CSV", "_" + QDateTime::currentDateTime().toString("yyyy.MM.dd_hh.mm.ss") + ".CSV");
         file.setFileName(fileName);
     }
     file.close();
@@ -44,8 +43,8 @@ void DataHandler::dumpDataToFile(QString fileName, QMultiMap<QString, QList<QStr
     out << "Test Name," << data.value("TEST").first() << ",,Measurement Time (sec),Volt (V)\n";
     out << "Model Name," << data.value("NAME").first() << ",," << data.value("SEC").at(0) << "," << data.value("VOLT").at(0) << "\n";
     out << "Serial Number," << data.value("NUM").first() << ",," << data.value("SEC").at(1) << "," << data.value("VOLT").at(1) << "\n";
-    out << "Temperature of Environment (deg C)," << data.value("ENV").first() << ",," << data.value("SEC").at(3) << "," << data.value("VOLT").at(3) << "\n";
-    out << "Temperature of Load (deg C)," << data.value("LOAD").first() << ",," << data.value("SEC").at(2) << "," << data.value("VOLT").at(2) << "\n";
+    out << "Temperature of Environment (deg C)," << data.value("ENV").first() << ",," << data.value("SEC").at(2) << "," << data.value("VOLT").at(2) << "\n";
+    out << "Temperature of Load (deg C)," << data.value("LOAD").first() << ",," << data.value("SEC").at(3) << "," << data.value("VOLT").at(3) << "\n";
     out << "Resolution,12 bit,," <<  data.value("SEC").at(4) << "," << data.value("VOLT").at(4) << "\n";
     out << "Sampling Rate (kHz)," << data.value("RATE").first() << ",," << data.value("SEC").at(5) << "," << data.value("VOLT").at(5) << "\n";
     out << "Record Length (sec)," << data.value("TIME").first() << ",," << data.value("SEC").at(6) << "," << data.value("VOLT").at(6) << "\n";
