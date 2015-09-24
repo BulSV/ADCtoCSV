@@ -567,9 +567,9 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     // [1-0]Temperary!!!
     m_leModelName->setEnabled(false);
-    m_leModelName->setText("Radiometric Receiver Module-5");
+    m_leModelName->setText("RR-5");
     QStringList completerList;
-    completerList << "Sensitivity" << "Voltage Stability";
+    completerList << "SensitivityTest" << "VoltageStabilityTest";
     QCompleter *completer = new QCompleter(completerList, this);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     m_leTestName->setCompleter(completer);
