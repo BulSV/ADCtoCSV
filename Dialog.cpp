@@ -482,7 +482,7 @@ void Dialog::timeDisplay()
 }
 
 Dialog::Dialog(QString title, QWidget *parent)
-    : QWidget(parent, Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint)
+    : QWidget(parent, Qt::WindowCloseButtonHint)
     , m_cbPort(new QComboBox(this))
     , m_cbBaud(new QComboBox(this))
     , m_bStart(new QPushButton("Start", this))
