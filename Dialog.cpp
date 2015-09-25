@@ -294,7 +294,7 @@ void Dialog::stopRec()
 #endif
     double d_time = m_LastRecieveTime/m_VoltList.size();
     for(int i = 0; i < m_VoltList.size(); ++i) {
-        m_SecondList.push_back(QString::number((i + 1)*d_time));
+        m_SecondList.push_back(QString::number((i + 1)*d_time, 'f'));
     }
     m_TimeDisplay->stop();
     m_BlinkTimeRec->stop();
