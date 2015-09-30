@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     app.setWindowIcon(QIcon(":/Resources/ADCtoCSV.png"));
 #endif
     Dialog dialog(QString::fromUtf8("ADC to CSV"));
-    dialog.showMaximized();
+    dialog.show();
 
     return app.exec();
 }

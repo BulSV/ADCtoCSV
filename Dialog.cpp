@@ -108,7 +108,7 @@ void Dialog::toggleTimer(bool isEnabled)
 {
     if(!m_isRecording) {
         m_leTimer->setEnabled(isEnabled);
-        m_leTimer->setInputMask("00:00:00;#");
+        m_leTimer->setInputMask("00:00:00;O");
     }
 }
 
@@ -527,7 +527,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     QRegExp regExpr("[0-5][0-9]:[0-5][0-9]:[0-5][0-9]");
     QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
     m_leTimer->setValidator(validator);
-    m_leTimer->setInputMask("00:00:00;#");
+    m_leTimer->setInputMask("00:00:00;O");
 
     m_lTickTime->setFont(font);
 
