@@ -293,9 +293,8 @@ void Dialog::stopRec()
 {
 #ifdef DEBUG
     qDebug() << "Stopping recording...";
-#endif
-    stop();
-    m_AutoMeasurmentTime->start(900000);
+#endif    
+    m_AutoMeasurmentTime->start(300000); // 5 minutes
 
     double d_time = m_LastRecieveTime/m_VoltList.size();
     for(int i = 0; i < m_VoltList.size(); ++i) {
@@ -385,6 +384,8 @@ void Dialog::stopRec()
 
     m_SecondList.clear();
     m_VoltList.clear();
+
+    stop();
 #ifdef DEBUG
     qDebug() << "DATA SIZE:" << m_Data.size();
 #endif
