@@ -67,6 +67,7 @@ class Dialog : public QWidget
     void timeCountUp();
     void timeCountdown();
     void setTime(int sec, int minute, int hour);
+    void waitTimeCountdown();
 private slots:
     void toggleTimer(bool isEnabled);
     void stop();

@@ -293,14 +293,14 @@ void Dialog::stopRec()
 {
 #ifdef DEBUG
     qDebug() << "Stopping recording...";
-#endif    
+#endif
     m_AutoMeasurmentTime->start(300000); // 5 minutes
 
     double d_time = m_LastRecieveTime/m_VoltList.size();
     for(int i = 0; i < m_VoltList.size(); ++i) {
         m_SecondList.push_back(QString::number((i + 1)*d_time, 'f'));
     }
-    m_TimeDisplay->stop();
+
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
     m_bRec->setEnabled(true);
@@ -478,12 +478,44 @@ void Dialog::timeCountdown()
     setTime(sec, minute, hour);
 }
 
+void Dialog::waitTimeCountdown()
+{
+    int hour = 0;
+    int minute = 0;
+    int sec = 0;
+
+    int time = 0;
+
+    time = m_AutoMeasurmentTime->remainingTime()/1000;
+    if(time > 0) {
+        sec = time % 60;
+        time /= 60;
+        minute = time % 60;
+        hour = time / 60;
+    } else {
+        sec = 0;
+        minute = 0;
+        hour = 0;
+    }
+#ifdef DEBUG
+    qDebug() << "hour:" << hour;
+    qDebug() << "minute:" << minute;
+    qDebug() << "sec:" << sec;
+    qDebug() << "time:" << time;
+#endif
+    setTime(sec, minute, hour);
+}
+
 void Dialog::timeDisplay()
 {
-    if(m_chbTimer->isChecked()) {
-        timeCountdown();
+    if(m_AutoMeasurmentTime->isActive()) {
+        waitTimeCountdown();
     } else {
-        timeCountUp();
+        if(m_chbTimer->isChecked()) {
+            timeCountdown();
+        } else {
+            timeCountUp();
+        }
     }
 }
 
