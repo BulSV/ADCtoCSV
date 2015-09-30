@@ -60,6 +60,7 @@ class Dialog : public QWidget
     QTimer *m_BlinkTimeRec;
 
     QTimer *m_TimeDisplay;
+    QTimer *m_AutoMeasurmentTime;
 
     void view();
     void connections();
@@ -80,6 +81,7 @@ private slots:
     void setRate();
     void stopRec();
     void timeDisplay();
+    void startAutoMeasurment();
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();

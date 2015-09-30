@@ -100,6 +100,8 @@ void Dialog::connections()
 
     connect(m_TimeDisplay, SIGNAL(timeout()), this, SLOT(timeDisplay()));
 
+    connect(m_AutoMeasurmentTime, SIGNAL(timeout()), this, SLOT(startAutoMeasurment()));
+
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
 }
@@ -108,7 +110,7 @@ void Dialog::toggleTimer(bool isEnabled)
 {
     if(!m_isRecording) {
         m_leTimer->setEnabled(isEnabled);
-        m_leTimer->setInputMask("00:00:00;#");
+        m_leTimer->setInputMask("00:00:00;O");
     }
 }
 
@@ -292,6 +294,9 @@ void Dialog::stopRec()
 #ifdef DEBUG
     qDebug() << "Stopping recording...";
 #endif
+    stop();
+    m_AutoMeasurmentTime->start(900000);
+
     double d_time = m_LastRecieveTime/m_VoltList.size();
     for(int i = 0; i < m_VoltList.size(); ++i) {
         m_SecondList.push_back(QString::number((i + 1)*d_time, 'f'));
@@ -481,6 +486,13 @@ void Dialog::timeDisplay()
     }
 }
 
+void Dialog::startAutoMeasurment()
+{
+    m_AutoMeasurmentTime->stop();
+    start();
+    record();
+}
+
 Dialog::Dialog(QString title, QWidget *parent)
     : QWidget(parent, Qt::WindowCloseButtonHint)
     , m_cbPort(new QComboBox(this))
@@ -514,6 +526,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_isRecording(false)
     , m_BlinkTimeRec(new QTimer(this))
     , m_TimeDisplay(new QTimer(this))
+    , m_AutoMeasurmentTime(new QTimer(this))
 {
     setWindowTitle(title);
     view();
@@ -527,7 +540,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     QRegExp regExpr("[0-5][0-9]:[0-5][0-9]:[0-5][0-9]");
     QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
     m_leTimer->setValidator(validator);
-    m_leTimer->setInputMask("00:00:00;#");
+    m_leTimer->setInputMask("00:00:00;O");
 
     m_lTickTime->setFont(font);
 
