@@ -61,6 +61,9 @@ class Dialog : public QWidget
 
     QTimer *m_TimeDisplay;
 
+    QLabel *m_lVoltAvg;
+    QLabel *m_lDeviation;
+
     void view();
     void connections();
     void timeCountUp();

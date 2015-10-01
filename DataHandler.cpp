@@ -26,10 +26,11 @@ void DataHandler::dumpDataToFile(QString fileName, QMultiMap<QString, QList<QStr
         return;
     }
     QFile file(fileName);
-    if(file.exists()) {
-        QMessageBox::warning(0, "Write File Error", "It seems file already exist!\nIt will be saved by name:" + fileName.replace(".CSV", "_" + QDateTime::currentDateTime().toString("yyyy.MM.dd_hh.mm.ss") + ".CSV"));
+//    if(file.exists()) {
+//        QMessageBox::warning(0, "Write File Error", "It seems file already exist!\nIt will be saved by name:" + fileName.replace(".CSV", "_" + QDateTime::currentDateTime().toString("yyyy.MM.dd_hh.mm.ss") + ".CSV"));
+        fileName.replace(".CSV", "_" + QDateTime::currentDateTime().toString("yyyy.MM.dd_hh.mm.ss") + ".CSV");
         file.setFileName(fileName);
-    }
+//    }
     file.close();
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
 #ifdef DEBUG

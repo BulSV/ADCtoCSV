@@ -1,6 +1,6 @@
-#ifdef DEBUG
+//#ifdef DEBUG
 #include <QDebug>
-#endif
+//#endif
 
 #include "Dialog.h"
 #include <QGridLayout>
@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QFont>
 #include <QCompleter>
+#include <QtMath>
 
 #include "DataHandler.h"
 
@@ -25,6 +26,8 @@
 #define BLINKTIMEREC 1000 // ms
 
 #define TIMEDISPLAY 1000 // ms
+
+#define TIMEVOLTDISPLAY 0.5 // sec
 
 #define VOLTFACTOR 5.174*2.2/4096.0 // V
 
@@ -69,10 +72,18 @@ void Dialog::view()
     infoLayout->addWidget(m_leTempLoad, 4, 1);
     infoLayout->setSpacing(5);
 
+    QGridLayout *voltAvgLayout = new QGridLayout;
+    voltAvgLayout->addWidget(new QLabel("Voltage, V", this), 0, 0, 1, 2);
+    voltAvgLayout->addWidget(m_lVoltAvg, 0, 2, 1, 2, Qt::AlignCenter);
+    voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0, 1, 2);
+    voltAvgLayout->addWidget(m_lDeviation, 1, 2, 1, 2, Qt::AlignCenter);
+    voltAvgLayout->setSpacing(5);
+
     QGridLayout *allLayouts = new QGridLayout;
     allLayouts->addItem(portLayout, 0, 0);
     allLayouts->addItem(controlLayout, 0, 1);
     allLayouts->addItem(infoLayout, 1, 0, 1, 2);
+    allLayouts->addItem(voltAvgLayout, 2, 0, 1, 4);
     allLayouts->setSpacing(5);
 
     setLayout(allLayouts);
@@ -195,11 +206,15 @@ void Dialog::received(bool isReceived)
         if(!m_BlinkTimeRxColor->isActive() && !m_BlinkTimeRxNone->isActive()) {
             m_BlinkTimeRxColor->start();
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
-        }
+        }        
 
         if(m_isRecording) {
-            m_VoltList.push_back(QString::number(m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR));
+            double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
+            m_VoltList.push_back(QString::number(currentVoltage, 'f'));
             m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
+            if(m_LastRecieveTime - static_cast<int>(m_LastRecieveTime/TIMEVOLTDISPLAY)*TIMEVOLTDISPLAY == 0.0) {
+                m_lVoltAvg->setText(QString::number(currentVoltage, 'f', 3));
+            }
         }
     }
 }
@@ -293,9 +308,50 @@ void Dialog::stopRec()
     qDebug() << "Stopping recording...";
 #endif
     double d_time = m_LastRecieveTime/m_VoltList.size();
+    // Calculating Average Voltage
+    double avgVolt = 0.0;
     for(int i = 0; i < m_VoltList.size(); ++i) {
         m_SecondList.push_back(QString::number((i + 1)*d_time, 'f'));
+        avgVolt += m_VoltList.at(i).toDouble();
     }
+    avgVolt /= m_VoltList.size();
+    m_lVoltAvg->setText(QString::number(avgVolt, 'f', 3));
+    // end Calculatin Average Voltage
+    // Calculating Deviation
+    double deviation = 0.0;
+    double voltAvg1ms = 0.0;
+    int samplingRate = static_cast<int>(0.001/d_time);
+    int size = samplingRate*(m_VoltList.size()/samplingRate);
+#ifdef DEBUG
+    qDebug() << "m_LastRecieveTime" << m_LastRecieveTime;
+    qDebug() << "m_VoltList.size()" << m_VoltList.size();
+    qDebug() << "Sampling Rate" << samplingRate;
+    qDebug() << "size" << size;
+    qDebug() << "avgVolt" << avgVolt;
+#endif
+    for(int j = 0; j < size; j = j + samplingRate) {
+        for(int i = 0; i < samplingRate; ++i) {
+            voltAvg1ms += m_VoltList.at(j + i).toDouble();
+        }
+        voltAvg1ms /= samplingRate;
+        deviation += qPow(voltAvg1ms - avgVolt, 2);
+#ifdef DEBUG
+        qDebug() << "voltAvg1ms" << voltAvg1ms;
+        qDebug() << "deviation" << deviation;
+#endif
+        voltAvg1ms = 0.0;
+    }
+    if(m_VoltList.size() > size) {
+        for(int i = size; i < m_VoltList.size(); ++i) {
+            voltAvg1ms += m_VoltList.at(i).toDouble();
+        }
+        voltAvg1ms /= m_VoltList.size() - size;
+        deviation += qPow(voltAvg1ms - avgVolt, 2);
+    }
+
+    deviation = qSqrt(deviation*samplingRate/(m_VoltList.size()))*1000;
+    m_lDeviation->setText(QString::number(deviation, 'f', 3));
+    // end Calcualtin Deviation
     m_TimeDisplay->stop();
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
@@ -514,6 +570,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_isRecording(false)
     , m_BlinkTimeRec(new QTimer(this))
     , m_TimeDisplay(new QTimer(this))
+    , m_lVoltAvg(new QLabel("NONE", this))
+    , m_lDeviation(new QLabel("NONE", this))
 {
     setWindowTitle(title);
     view();
@@ -530,6 +588,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_leTimer->setInputMask("00:00:00;O");
 
     m_lTickTime->setFont(font);
+    m_lVoltAvg->setFont(font);
+    m_lDeviation->setFont(font);
 
     QStringList portsNames;
 
