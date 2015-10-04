@@ -1,6 +1,6 @@
-//#ifdef DEBUG
+#ifdef DEBUG
 #include <QDebug>
-//#endif
+#endif
 
 #include "Dialog.h"
 #include <QGridLayout>
@@ -13,6 +13,9 @@
 #include <QFont>
 #include <QCompleter>
 #include <QtMath>
+#include <qwt_plot_canvas.h>
+#include <qwt_legend.h>
+#include <qwt_plot_grid.h>
 
 #include "DataHandler.h"
 
@@ -27,7 +30,7 @@
 
 #define TIMEDISPLAY 1000 // ms
 
-#define TIMEVOLTDISPLAY 0.5 // sec
+#define TIMEVOLTDISPLAY 200 // ms
 
 #define VOLTFACTOR 5.174*2.2/4096.0 // V
 
@@ -73,17 +76,23 @@ void Dialog::view()
     infoLayout->setSpacing(5);
 
     QGridLayout *voltAvgLayout = new QGridLayout;
-    voltAvgLayout->addWidget(new QLabel("Voltage, V", this), 0, 0, 1, 2);
-    voltAvgLayout->addWidget(m_lVoltAvg, 0, 2, 1, 2, Qt::AlignCenter);
-    voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0, 1, 2);
-    voltAvgLayout->addWidget(m_lDeviation, 1, 2, 1, 2, Qt::AlignCenter);
-    voltAvgLayout->setSpacing(5);
+    voltAvgLayout->addWidget(new QLabel("Voltage, V", this), 0, 0);
+    voltAvgLayout->addWidget(m_lVoltAvg, 0, 2);
+    voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
+    voltAvgLayout->addWidget(m_lDeviation, 1, 2);
+    voltAvgLayout->setSpacing(5);    
+
+    QGridLayout *graphLayout = new QGridLayout;
+    graphLayout->addWidget(m_plot);
+    graphLayout->setSpacing(5);
+    m_plot->setMaximumSize(350, 350);
 
     QGridLayout *allLayouts = new QGridLayout;
     allLayouts->addItem(portLayout, 0, 0);
     allLayouts->addItem(controlLayout, 0, 1);
     allLayouts->addItem(infoLayout, 1, 0, 1, 2);
     allLayouts->addItem(voltAvgLayout, 2, 0, 1, 4);
+    allLayouts->addItem(graphLayout, 0, 3, 4, 4, Qt::AlignCenter);
     allLayouts->setSpacing(5);
 
     setLayout(allLayouts);
@@ -110,6 +119,7 @@ void Dialog::connections()
     connect(m_bSetRate, SIGNAL(clicked()), this, SLOT(setRate()));
 
     connect(m_TimeDisplay, SIGNAL(timeout()), this, SLOT(timeDisplay()));
+    connect(m_TimeVoltDisplay, SIGNAL(timeout()), this, SLOT(voltDisplay()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -191,7 +201,7 @@ void Dialog::start()
         m_cbPort->setEnabled(false);
         m_cbBaud->setEnabled(false);
         m_lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
-        m_lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
+        m_lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");        
     }
     else
     {
@@ -211,10 +221,7 @@ void Dialog::received(bool isReceived)
         if(m_isRecording) {
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
-            m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
-            if(m_LastRecieveTime - static_cast<int>(m_LastRecieveTime/TIMEVOLTDISPLAY)*TIMEVOLTDISPLAY == 0.0) {
-                m_lVoltAvg->setText(QString::number(currentVoltage, 'f', 3));
-            }
+            m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;            
         }
     }
 }
@@ -247,8 +254,12 @@ void Dialog::record()
         m_SecondList.clear();
         m_VoltList.clear();
 
+        m_lVoltAvg->setText("NONE");
+        m_lDeviation->setText("NONE");
+
         m_CurrentTime->start();
         m_TimeDisplay->start();
+        m_TimeVoltDisplay->start();
     }
 }
 
@@ -307,6 +318,8 @@ void Dialog::stopRec()
 #ifdef DEBUG
     qDebug() << "Stopping recording...";
 #endif
+    m_TimeVoltDisplay->stop();
+
     double d_time = m_LastRecieveTime/m_VoltList.size();
     // Calculating Average Voltage
     double avgVolt = 0.0;
@@ -537,6 +550,12 @@ void Dialog::timeDisplay()
     }
 }
 
+void Dialog::voltDisplay()
+{
+    m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
+    qApp->processEvents();
+}
+
 Dialog::Dialog(QString title, QWidget *parent)
     : QWidget(parent, Qt::WindowCloseButtonHint)
     , m_cbPort(new QComboBox(this))
@@ -572,6 +591,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_TimeDisplay(new QTimer(this))
     , m_lVoltAvg(new QLabel("NONE", this))
     , m_lDeviation(new QLabel("NONE", this))
+    , m_TimeVoltDisplay(new QTimer(this))
+    , m_plot(new QwtPlot(this))
 {
     setWindowTitle(title);
     view();
@@ -619,6 +640,8 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     m_TimeDisplay->setInterval(TIMEDISPLAY);
 
+    m_TimeVoltDisplay->setInterval(TIMEVOLTDISPLAY);
+
     QString exprT = "(\\-){,1}(\\d){,2}";
     QRegExp regExprT(exprT);
     QRegExpValidator *validatorT = new QRegExpValidator(regExprT, this);
@@ -634,6 +657,51 @@ Dialog::Dialog(QString title, QWidget *parent)
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     m_leTestName->setCompleter(completer);
     // [1-0]Temperary!!!
+
+    // Plot
+    QwtPlotCanvas *canvas = new QwtPlotCanvas();
+//    canvas->setBorderRadius(200);
+    canvas->setFrameShadow(QwtPlotCanvas::Plain);
+    canvas->setFrameStyle(QwtPlotCanvas::StyledPanel);
+
+    m_plot->setCanvas(canvas);
+    m_plot->setCanvasBackground(QBrush(QColor("#FFFFFF")));
+
+    // grid
+    QwtPlotGrid *grid = new QwtPlotGrid;
+    grid->enableXMin( true );
+    grid->enableYMin( true );
+    grid->setMajorPen( Qt::black, 0 );
+    grid->setMinorPen( Qt::gray, 0, Qt::DotLine );
+    grid->attach( m_plot );
+
+    // axes
+    // Time
+    QwtText timeTitle("Time, sec");
+    timeTitle.setFont(QFont("Verdana", 10));
+    m_plot->setAxisTitle( QwtPlot::xBottom, timeTitle );
+    m_plot->setAxisScale( QwtPlot::xBottom,
+                          0,
+                          10,
+                          1 );
+    m_plot->setAxisMaxMajor( QwtPlot::xBottom, 1 );
+    m_plot->setAxisMaxMinor( QwtPlot::xBottom, 2 );
+    m_plot->setAxisAutoScale( QwtPlot::xBottom, false );
+
+    // Voltage Left
+    QwtText voltTitle("Voltage, V");
+    voltTitle.setFont(QFont("Verdana", 10));
+    m_plot->setAxisTitle( QwtPlot::yLeft, voltTitle );
+    m_plot->setAxisScale( QwtPlot::yLeft,
+                          0,
+                          5,
+                          0.5 );
+    m_plot->setAxisMaxMajor( QwtPlot::yLeft, 10 );
+    m_plot->setAxisMaxMinor( QwtPlot::yLeft, 10 );
+    m_plot->setAxisAutoScale( QwtPlot::yLeft, false );
+
+    m_plot->setAutoReplot( false );
+    // end Plot
 }
 
 Dialog::~Dialog()

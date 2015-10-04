@@ -14,6 +14,8 @@
 #include <QMultiMap>
 #include <QRegExp>
 #include <QRegExpValidator>
+#include <qwt_plot.h>
+#include <qwt_plot_curve.h>
 #include "ComPort.h"
 #include "ADCtoCSVProtocol.h"
 
@@ -63,6 +65,9 @@ class Dialog : public QWidget
 
     QLabel *m_lVoltAvg;
     QLabel *m_lDeviation;
+    QTimer *m_TimeVoltDisplay;
+
+    QwtPlot *m_plot;
 
     void view();
     void connections();
@@ -83,6 +88,7 @@ private slots:
     void setRate();
     void stopRec();
     void timeDisplay();
+    void voltDisplay();
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();
