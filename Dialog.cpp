@@ -553,6 +553,16 @@ void Dialog::timeDisplay()
 void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
+    m_PlotVolts.push_back(m_VoltList.last().toDouble());
+    double currentTime = m_CurrentTime->elapsed()/1000.0;
+    m_PlotTime.push_back(currentTime);
+    if(currentTime - m_PrevTime > 10.0) {
+        m_PlotVolts.removeFirst();
+        m_PlotTime.removeFirst();
+        m_PrevTime = currentTime;
+    }
+    m_Curve->setSamples(m_PlotTime, m_PlotVolts);
+    m_plot->replot();
     qApp->processEvents();
 }
 
@@ -593,6 +603,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lDeviation(new QLabel("NONE", this))
     , m_TimeVoltDisplay(new QTimer(this))
     , m_plot(new QwtPlot(this))
+    , m_Curve(new QwtPlotCurve)
+    , m_PrevTime(0.0)
 {
     setWindowTitle(title);
     view();
@@ -701,6 +713,14 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_plot->setAxisAutoScale( QwtPlot::yLeft, false );
 
     m_plot->setAutoReplot( false );
+
+    // Curve
+    m_Curve->setRenderHint( QwtPlotItem::RenderAntialiased );
+    m_Curve->setLegendAttribute( QwtPlotCurve::LegendShowLine );
+    m_Curve->setYAxis( QwtPlot::yLeft );
+    m_Curve->setXAxis( QwtPlot::xBottom );
+    m_Curve->setPen(Qt::green);
+    m_Curve->attach(m_plot);
     // end Plot
 }
 

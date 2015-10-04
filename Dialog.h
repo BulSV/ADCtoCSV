@@ -68,6 +68,10 @@ class Dialog : public QWidget
     QTimer *m_TimeVoltDisplay;
 
     QwtPlot *m_plot;
+    QwtPlotCurve *m_Curve;
+    QVector<double> m_PlotVolts;
+    QVector<double> m_PlotTime;
+    double m_PrevTime;
 
     void view();
     void connections();
