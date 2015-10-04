@@ -554,14 +554,21 @@ void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
-    double currentTime = m_CurrentTime->elapsed()/1000.0;
-    m_PlotTime.push_back(currentTime);
-    if(currentTime - m_PrevTime > 10.0) {
+    m_PlotTime.push_back(m_LastRecieveTime);
+    if(m_LastRecieveTime - m_PrevTime > 10.0) {
+        m_PrevTime += 1.0;
+    }
+    if(m_LastRecieveTime > 10.0) {
         m_PlotVolts.removeFirst();
         m_PlotTime.removeFirst();
-        m_PrevTime = currentTime;
     }
     m_Curve->setSamples(m_PlotTime, m_PlotVolts);
+    if(m_LastRecieveTime - m_PrevTime >= 1.0) {
+        m_plot->setAxisScale( QwtPlot::xBottom,
+                              static_cast<int>(m_PrevTime),
+                              10 + static_cast<int>(m_PrevTime),
+                              1 );
+    }
     m_plot->replot();
     qApp->processEvents();
 }
@@ -706,8 +713,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_plot->setAxisTitle( QwtPlot::yLeft, voltTitle );
     m_plot->setAxisScale( QwtPlot::yLeft,
                           0,
-                          5,
-                          0.5 );
+                          2.5,
+                          0.25 );
     m_plot->setAxisMaxMajor( QwtPlot::yLeft, 10 );
     m_plot->setAxisMaxMinor( QwtPlot::yLeft, 10 );
     m_plot->setAxisAutoScale( QwtPlot::yLeft, false );
@@ -719,7 +726,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_Curve->setLegendAttribute( QwtPlotCurve::LegendShowLine );
     m_Curve->setYAxis( QwtPlot::yLeft );
     m_Curve->setXAxis( QwtPlot::xBottom );
-    m_Curve->setPen(Qt::green);
+    m_Curve->setPen(Qt::red);
     m_Curve->attach(m_plot);
     // end Plot
 }
