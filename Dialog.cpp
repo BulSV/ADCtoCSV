@@ -16,6 +16,7 @@
 #include <qwt_plot_canvas.h>
 #include <qwt_legend.h>
 #include <qwt_plot_grid.h>
+#include <QMessageBox>
 
 #include "DataHandler.h"
 
@@ -33,6 +34,9 @@
 #define TIMEVOLTDISPLAY 200 // ms
 
 #define VOLTFACTOR 5.174*2.2/4096.0 // V
+
+#define MINVOLT 1000.0
+#define MAXVOLT -1000.0
 
 void Dialog::view()
 {
@@ -220,6 +224,12 @@ void Dialog::received(bool isReceived)
 
         if(m_isRecording) {
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
+            if(m_maxVoltage < currentVoltage) {
+                m_maxVoltage = currentVoltage;
+            }
+            if(m_minVoltage > currentVoltage) {
+                m_minVoltage = currentVoltage;
+            }
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
             m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
         }
@@ -264,6 +274,9 @@ void Dialog::record()
                               static_cast<int>(m_PrevTime),
                               60 + static_cast<int>(m_PrevTime),
                               10 );
+
+        m_maxVoltage = MAXVOLT;
+        m_minVoltage = MINVOLT;
 
         m_CurrentTime->start();
         m_TimeDisplay->start();
@@ -342,7 +355,16 @@ void Dialog::stopRec()
     double deviation = 0.0;
     double voltAvg1ms = 0.0;
     int samplingRate = static_cast<int>(0.001/d_time);
-    int size = samplingRate*(m_VoltList.size()/samplingRate);
+    int size = 0;
+    try{
+        if(!samplingRate) {
+            throw std::overflow_error("Divide by zerro accured!");
+        }
+        size = samplingRate*(m_VoltList.size()/samplingRate);
+    } catch(std::overflow_error &e) {
+        QMessageBox::critical(this, "Critical Error", QString(e.what()) + "\nSampling rate must be greater than 1kHz");
+    }
+
 #ifdef DEBUG
     qDebug() << "m_LastRecieveTime" << m_LastRecieveTime;
     qDebug() << "m_VoltList.size()" << m_VoltList.size();
@@ -561,6 +583,7 @@ void Dialog::timeDisplay()
 void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
+    m_lDeviation->setText(QString::number(m_maxVoltage - m_minVoltage, 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
@@ -620,6 +643,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_plot(new QwtPlot(this))
     , m_Curve(new QwtPlotCurve)
     , m_PrevTime(0.0)
+    , m_maxVoltage(MAXVOLT)
+    , m_minVoltage(MINVOLT)
 {
     setWindowTitle(title);
     view();
