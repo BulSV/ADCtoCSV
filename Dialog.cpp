@@ -80,7 +80,7 @@ void Dialog::view()
     voltAvgLayout->addWidget(m_lVoltAvg, 0, 2);
     voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
     voltAvgLayout->addWidget(m_lDeviation, 1, 2);
-    voltAvgLayout->setSpacing(5);    
+    voltAvgLayout->setSpacing(5);
 
     QGridLayout *graphLayout = new QGridLayout;
     graphLayout->addWidget(m_plot);
@@ -201,7 +201,7 @@ void Dialog::start()
         m_cbPort->setEnabled(false);
         m_cbBaud->setEnabled(false);
         m_lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
-        m_lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");        
+        m_lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
     }
     else
     {
@@ -216,12 +216,12 @@ void Dialog::received(bool isReceived)
         if(!m_BlinkTimeRxColor->isActive() && !m_BlinkTimeRxNone->isActive()) {
             m_BlinkTimeRxColor->start();
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
-        }        
+        }
 
         if(m_isRecording) {
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
-            m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;            
+            m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
         }
     }
 }
@@ -256,6 +256,10 @@ void Dialog::record()
 
         m_lVoltAvg->setText("NONE");
         m_lDeviation->setText("NONE");
+
+        m_PlotVolts.clear();
+        m_PlotTime.clear();
+        m_PrevTime = 0.0;
 
         m_CurrentTime->start();
         m_TimeDisplay->start();
