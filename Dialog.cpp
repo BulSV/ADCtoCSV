@@ -260,6 +260,10 @@ void Dialog::record()
         m_PlotVolts.clear();
         m_PlotTime.clear();
         m_PrevTime = 0.0;
+        m_plot->setAxisScale( QwtPlot::xBottom,
+                              static_cast<int>(m_PrevTime),
+                              60 + static_cast<int>(m_PrevTime),
+                              10 );
 
         m_CurrentTime->start();
         m_TimeDisplay->start();
@@ -559,19 +563,19 @@ void Dialog::voltDisplay()
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);
-    if(m_LastRecieveTime - m_PrevTime > 10.0) {
-        m_PrevTime += 1.0;
+    if(m_LastRecieveTime - m_PrevTime > 60.0) {
+        m_PrevTime += 10.0;
     }
-    if(m_LastRecieveTime > 10.0) {
+    if(m_LastRecieveTime > 60.0) {
         m_PlotVolts.removeFirst();
         m_PlotTime.removeFirst();
     }
     m_Curve->setSamples(m_PlotTime, m_PlotVolts);
-    if(m_LastRecieveTime - m_PrevTime >= 1.0) {
+    if(m_LastRecieveTime - m_PrevTime >= 10.0) {
         m_plot->setAxisScale( QwtPlot::xBottom,
                               static_cast<int>(m_PrevTime),
-                              10 + static_cast<int>(m_PrevTime),
-                              1 );
+                              60 + static_cast<int>(m_PrevTime),
+                              10 );
     }
     m_plot->replot();
     qApp->processEvents();
@@ -705,8 +709,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_plot->setAxisTitle( QwtPlot::xBottom, timeTitle );
     m_plot->setAxisScale( QwtPlot::xBottom,
                           0,
-                          10,
-                          1 );
+                          60,
+                          10 );
     m_plot->setAxisMaxMajor( QwtPlot::xBottom, 1 );
     m_plot->setAxisMaxMinor( QwtPlot::xBottom, 2 );
     m_plot->setAxisAutoScale( QwtPlot::xBottom, false );
