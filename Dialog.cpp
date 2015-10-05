@@ -84,6 +84,8 @@ void Dialog::view()
     voltAvgLayout->addWidget(m_lVoltAvg, 0, 2);
     voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
     voltAvgLayout->addWidget(m_lDeviation, 1, 2);
+    voltAvgLayout->addWidget(new QLabel("Vp-p, V", this), 2, 0);
+    voltAvgLayout->addWidget(m_lVpp, 2, 2);
     voltAvgLayout->setSpacing(5);
 
     QGridLayout *graphLayout = new QGridLayout;
@@ -266,6 +268,7 @@ void Dialog::record()
 
         m_lVoltAvg->setText("NONE");
         m_lDeviation->setText("NONE");
+        m_lVpp->setText("NONE");
 
         m_PlotVolts.clear();
         m_PlotTime.clear();
@@ -583,7 +586,7 @@ void Dialog::timeDisplay()
 void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
-    m_lDeviation->setText(QString::number(m_maxVoltage - m_minVoltage, 'f', 3));
+    m_lVpp->setText(QString::number(m_maxVoltage - m_minVoltage, 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
@@ -639,6 +642,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_TimeDisplay(new QTimer(this))
     , m_lVoltAvg(new QLabel("NONE", this))
     , m_lDeviation(new QLabel("NONE", this))
+    , m_lVpp(new QLabel("NONE", this))
     , m_TimeVoltDisplay(new QTimer(this))
     , m_plot(new QwtPlot(this))
     , m_Curve(new QwtPlotCurve)
@@ -663,6 +667,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_lTickTime->setFont(font);
     m_lVoltAvg->setFont(font);
     m_lDeviation->setFont(font);
+    m_lVpp->setFont(font);
 
     QStringList portsNames;
 

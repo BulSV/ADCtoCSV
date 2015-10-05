@@ -65,6 +65,7 @@ class Dialog : public QWidget
 
     QLabel *m_lVoltAvg;
     QLabel *m_lDeviation;
+    QLabel *m_lVpp;
     QTimer *m_TimeVoltDisplay;
 
     QwtPlot *m_plot;
