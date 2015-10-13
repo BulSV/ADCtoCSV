@@ -84,7 +84,7 @@ void Dialog::view()
     voltAvgLayout->addWidget(m_lVoltAvg, 0, 2);
     voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
     voltAvgLayout->addWidget(m_lDeviation, 1, 2);
-    voltAvgLayout->addWidget(new QLabel("Vp-p, V", this), 2, 0);
+    voltAvgLayout->addWidget(new QLabel("Vp-p, mV", this), 2, 0);
     voltAvgLayout->addWidget(m_lVpp, 2, 2);
     voltAvgLayout->setSpacing(5);
 
@@ -586,7 +586,7 @@ void Dialog::timeDisplay()
 void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
-    m_lVpp->setText(QString::number(m_maxVoltage - m_minVoltage, 'f', 3));
+    m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
