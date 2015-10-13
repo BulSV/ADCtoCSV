@@ -595,7 +595,7 @@ void Dialog::voltDisplay()
     }
     m_lastVoltIndex = m_VoltList.size() - 1;
 
-    m_PlotTime.push_back(m_LastRecieveTime);
+//    m_PlotTime.push_back(m_LastRecieveTime);
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
         m_PrevTime += 10.0;
     }
