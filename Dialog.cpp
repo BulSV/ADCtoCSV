@@ -600,8 +600,10 @@ void Dialog::voltDisplay()
         m_PrevTime += 10.0;
     }
     if(m_LastRecieveTime > 60.0) {
-        m_PlotVolts.removeFirst();
-        m_PlotTime.removeFirst();
+        for(int i = 0; i < m_LastRecieveTime - m_PrevTime; ++i) {
+            m_PlotVolts.removeAt(i);
+            m_PlotTime.removeAt(i);
+        }
     }
     m_Curve->setSamples(m_PlotTime, m_PlotVolts);
     if(m_LastRecieveTime - m_PrevTime >= 10.0) {
