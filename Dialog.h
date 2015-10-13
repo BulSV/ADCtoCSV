@@ -73,6 +73,7 @@ class Dialog : public QWidget
     QVector<double> m_PlotVolts;
     QVector<double> m_PlotTime;
     double m_PrevTime;
+    int m_lastVoltIndex;
 
     double m_maxVoltage;
     double m_minVoltage;

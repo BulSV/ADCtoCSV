@@ -587,7 +587,14 @@ void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
-    m_PlotVolts.push_back(m_VoltList.last().toDouble());
+
+    double dTime = (m_LastRecieveTime - m_PrevTime)/(m_VoltList.size() - m_lastVoltIndex);
+    for(int i = m_lastVoltIndex; i < m_VoltList.size(); ++i) {
+        m_PlotVolts.push_back(m_VoltList.at(i).toDouble());
+        m_PlotTime.push_back(m_PrevTime + i*dTime);
+    }
+    m_lastVoltIndex = m_VoltList.size() - 1;
+
     m_PlotTime.push_back(m_LastRecieveTime);
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
         m_PrevTime += 10.0;
@@ -647,6 +654,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_plot(new QwtPlot(this))
     , m_Curve(new QwtPlotCurve)
     , m_PrevTime(0.0)
+    , m_lastVoltIndex(0)
     , m_maxVoltage(MAXVOLT)
     , m_minVoltage(MINVOLT)
 {
