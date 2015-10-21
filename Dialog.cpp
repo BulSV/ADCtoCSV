@@ -22,7 +22,7 @@
 
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
-#define BYTESLENGTH 3
+#define BYTESLENGTH 4
 
 #define BLINKTIMETX 200 // ms
 #define BLINKTIMERX 500 // ms
@@ -230,9 +230,15 @@ void Dialog::received(bool isReceived)
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
             if(m_maxVoltage < currentVoltage) {
                 m_maxVoltage = currentVoltage;
+#ifdef DEBUG
+                qDebug() << "MAX Vp-p:" << currentVoltage;
+#endif
             }
             if(m_minVoltage > currentVoltage) {
                 m_minVoltage = currentVoltage;
+#ifdef DEBUG
+                qDebug() << "MIN Vp-p:" << currentVoltage;
+#endif
             }
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
             m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
@@ -588,6 +594,11 @@ void Dialog::timeDisplay()
 void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
+#ifdef DEBUG
+                qDebug() << "[*]MAX Vp-p:" << m_maxVoltage;
+                qDebug() << "[*]MIN Vp-p:" << m_minVoltage;
+                qDebug() << "[*]Vp-p:" << 1000*(m_maxVoltage - m_minVoltage);
+#endif
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);

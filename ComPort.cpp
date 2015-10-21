@@ -44,7 +44,7 @@ void ComPort::readData()
                 ++m_counter;
 
                 if((m_counter == itsPacketLenght)
-                        && !(itsReadData.at(itsPacketLenght - 2) & 0xF0)) {
+                        && (itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte))) {
 #ifdef DEBUG1
                     qDebug() << itsReadData.toHex();
 #endif
