@@ -346,11 +346,11 @@ void Dialog::stopRec()
 #endif
     m_TimeVoltDisplay->stop();
 
-    double d_time = m_LastRecieveTime/m_VoltList.size();
+    double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
     // Calculating Average Voltage
     double avgVolt = 0.0;
     for(int i = 0; i < m_VoltList.size(); ++i) {
-        m_SecondList.push_back(QString::number((i + 1)*d_time, 'f'));
+        m_SecondList.push_back(QString::number(i*d_time, 'f'));
         avgVolt += m_VoltList.at(i).toDouble();
     }
     avgVolt /= m_VoltList.size();
