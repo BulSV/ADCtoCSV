@@ -38,6 +38,8 @@
 #define MINVOLT 1000.0
 #define MAXVOLT -1000.0
 
+const double DISCRETE = 1.0;  // Accumulation Time, ms
+
 void Dialog::view()
 {
     QGridLayout *portLayout = new QGridLayout;
@@ -357,7 +359,7 @@ void Dialog::stopRec()
     // Calculating Deviation
     double deviation = 0.0;
     double voltAvg1ms = 0.0;
-    int samplingRate = static_cast<int>(0.001/d_time);
+    int samplingRate = static_cast<int>(0.001/d_time)*DISCRETE;
     int size = 0;
     try{
         if(!samplingRate) {
