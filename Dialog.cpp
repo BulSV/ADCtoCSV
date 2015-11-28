@@ -240,7 +240,7 @@ void Dialog::received(bool isReceived)
                 qDebug() << "MIN Vp-p:" << currentVoltage;
 #endif
             }
-            m_VoltList.push_back(QString::number(currentVoltage, 'f'));
+            m_VoltList.push_back(currentVoltage);
             m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
         }
     }
@@ -353,11 +353,13 @@ void Dialog::stopRec()
     m_TimeVoltDisplay->stop();
 
     double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
+    QList<QString> voltList;
     // Calculating Average Voltage
     double avgVolt = 0.0;
     for(int i = 0; i < m_VoltList.size(); ++i) {
         m_SecondList.push_back(QString::number(i*d_time, 'f'));
-        avgVolt += m_VoltList.at(i).toDouble();
+        avgVolt += m_VoltList.at(i);
+        voltList.push_back(QString::number(m_VoltList.at(i), 'f'));
     }
     avgVolt /= m_VoltList.size();
     m_lVoltAvg->setText(QString::number(avgVolt, 'f', 3));
@@ -385,7 +387,7 @@ void Dialog::stopRec()
 #endif
     for(int j = 0; j < size; j = j + samplingRate) {
         for(int i = 0; i < samplingRate; ++i) {
-            voltAvg1ms += m_VoltList.at(j + i).toDouble();
+            voltAvg1ms += voltList.at(j + i).toDouble();
         }
         voltAvg1ms /= samplingRate;
         deviation += qPow(voltAvg1ms - avgVolt, 2);
@@ -397,7 +399,7 @@ void Dialog::stopRec()
     }
     if(m_VoltList.size() > size) {
         for(int i = size; i < m_VoltList.size(); ++i) {
-            voltAvg1ms += m_VoltList.at(i).toDouble();
+            voltAvg1ms += voltList.at(i).toDouble();
         }
         voltAvg1ms /= m_VoltList.size() - size;
         deviation += qPow(voltAvg1ms - avgVolt, 2);
@@ -460,7 +462,7 @@ void Dialog::stopRec()
     m_Data.insert("TIME", dataList);
     dataList.clear();
 
-    m_Data.insert("VOLT", m_VoltList);
+    m_Data.insert("VOLT", voltList);
     m_Data.insert("SEC", m_SecondList);
 
     QString fileName;
@@ -593,14 +595,14 @@ void Dialog::timeDisplay()
 
 void Dialog::voltDisplay()
 {
-    m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
+    m_lVoltAvg->setText(QString::number(m_VoltList.last(), 'f', 3));
 #ifdef DEBUG
                 qDebug() << "[*]MAX Vp-p:" << m_maxVoltage;
                 qDebug() << "[*]MIN Vp-p:" << m_minVoltage;
                 qDebug() << "[*]Vp-p:" << 1000*(m_maxVoltage - m_minVoltage);
 #endif
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
-    m_PlotVolts.push_back(m_VoltList.last().toDouble());
+    m_PlotVolts.push_back(m_VoltList.last());
     m_PlotTime.push_back(m_LastRecieveTime);
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
         m_PrevTime += 10.0;

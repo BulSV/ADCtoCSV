@@ -51,7 +51,7 @@ class Dialog : public QWidget
     QTimer *m_BlinkTimeTxColor;
     QTimer *m_BlinkTimeRxColor;
 
-    QList<QString> m_VoltList;
+    QList<double> m_VoltList;
     QList<QString> m_SecondList;
     QTime *m_CurrentTime;
     double m_LastRecieveTime;
