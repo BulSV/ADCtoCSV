@@ -137,7 +137,7 @@ void Dialog::toggleTimer(bool isEnabled)
 {
     if(!m_isRecording) {
         m_leTimer->setEnabled(isEnabled);
-        m_leTimer->setInputMask("00:00:00;O");
+        m_leTimer->setInputMask("00:00:00;-");
     }
 }
 
@@ -670,17 +670,17 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_leTimer->setAlignment(Qt::AlignCenter);
-    QFont font("Consolas", 15);
-    m_leTimer->setFont(font);
+//    QFont font("Consolas", 15);
+//    m_leTimer->setFont(font);
     QRegExp regExpr("[0-5][0-9]:[0-5][0-9]:[0-5][0-9]");
     QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
     m_leTimer->setValidator(validator);
-    m_leTimer->setInputMask("00:00:00;O");
+    m_leTimer->setInputMask("00:00:00;-");
 
-    m_lTickTime->setFont(font);
-    m_lVoltAvg->setFont(font);
-    m_lDeviation->setFont(font);
-    m_lVpp->setFont(font);
+//    m_lTickTime->setFont(font);
+//    m_lVoltAvg->setFont(font);
+//    m_lDeviation->setFont(font);
+//    m_lVpp->setFont(font);
 
     QStringList portsNames;
 
