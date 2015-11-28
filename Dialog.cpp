@@ -227,7 +227,7 @@ void Dialog::received(bool isReceived)
         }
 
         if(m_isRecording) {
-            double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
+            double currentVoltage = m_Protocol->getReadedData().toInt()*VOLTFACTOR;
             if(m_maxVoltage < currentVoltage) {
                 m_maxVoltage = currentVoltage;
 #ifdef DEBUG

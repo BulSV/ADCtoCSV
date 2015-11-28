@@ -12,7 +12,7 @@ class ADCtoCSVProtocol : public IProtocol
 public:
     explicit ADCtoCSVProtocol(ComPort *comPort, QObject *parent = 0);
     virtual void setDataToWrite(const QMultiMap<QString, QString> &data);
-    virtual QMultiMap<QString, QString> getReadedData() const;
+    virtual QByteArray getReadedData() const;
 signals:
 
 public slots:
@@ -24,7 +24,7 @@ private:
     ComPort *itsComPort;
 
     QMultiMap<QString, QString> itsWriteData;
-    QMultiMap<QString, QString> itsReadData;
+    QByteArray itsReadData;
 
     QTimer *m_resend;
     int m_numResends;
