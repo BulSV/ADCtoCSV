@@ -160,7 +160,7 @@ void Dialog::stop()
     m_leTempLoad->setEnabled(true);
     m_leTempEnv->setEnabled(true);
     m_leTestName->setEnabled(true);
-    m_sbSamplRate->setEnabled(true);
+//    m_sbSamplRate->setEnabled(true);
     m_bSetRate->setEnabled(true);
     m_cbPort->setEnabled(true);
     m_cbBaud->setEnabled(true);
@@ -377,6 +377,7 @@ void Dialog::stopRec()
     } catch(std::overflow_error &e) {
         QMessageBox::critical(this, "Critical Error", QString(e.what()) + "\nSampling rate must be greater than 1kHz");
     }
+    m_sbSamplRate->setValue(samplingRate);
 
 #ifdef DEBUG
     qDebug() << "m_LastRecieveTime" << m_LastRecieveTime;
@@ -416,7 +417,7 @@ void Dialog::stopRec()
 
     m_isBright = true;
 
-    m_sbSamplRate->setEnabled(true);
+//    m_sbSamplRate->setEnabled(true);
     m_bSetRate->setEnabled(true);
     m_leSerialNum->setEnabled(true);
     m_leModelName->setEnabled(true);
@@ -481,6 +482,9 @@ void Dialog::stopRec()
     }
     if(!m_leTempLoad->text().isEmpty()) {
         fileName += "_" + m_leTempLoad->text();
+    }
+    if(!m_lDeviation->text().isEmpty()) {
+        fileName += "_" + m_lDeviation->text();
     }
     fileName += ".CSV";
 #ifdef DEBUG
@@ -702,6 +706,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_bStopRec->setEnabled(false);
     m_bSetRate->setEnabled(false);
     m_bRec->setEnabled(false);
+
+    m_sbSamplRate->setEnabled(false);
 
     m_BlinkTimeTxNone->setInterval(BLINKTIMETX);
     m_BlinkTimeRxNone->setInterval(BLINKTIMERX);
