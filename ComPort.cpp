@@ -30,6 +30,7 @@ ComPort::ComPort(QSerialPort *port,
 
 void ComPort::readData()
 {
+    qApp->processEvents();
     if(itsPort->openMode() != QSerialPort::WriteOnly) {
         QByteArray buffer;
 
