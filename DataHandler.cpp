@@ -51,7 +51,7 @@ void DataHandler::dumpDataToFile(QString fileName, QMultiMap<QString, QList<QStr
     out << "Record Length (sec)," << data.value("TIME").first() << ",," << data.value("SEC").at(6) << "," << data.value("VOLT").at(6) << "\n";
     out << "Software version,1.0,," << data.value("SEC").at(7) << "," << data.value("VOLT").at(7) << "\n";
     out << "Company Name,Elisat,," << data.value("SEC").at(8) << "," << data.value("VOLT").at(8) << "\n";
-    out << "tel/fax,+-380-44-407-60-27,," << data.value("SEC").at(9) << "," << data.value("VOLT").at(9) << "\n";
+    out << "tel/fax,+380-44-407-60-27,," << data.value("SEC").at(9) << "," << data.value("VOLT").at(9) << "\n";
     out << "e-mail,elisat@online.ua,," << data.value("SEC").at(10) << "," << data.value("VOLT").at(10) << "\n";
     for(int i = 11; i < data.value("VOLT").size() && i < data.value("SEC").size(); ++i) {
         out << ",,," << data.value("SEC").at(i) << "," << data.value("VOLT").at(i) << "\n";
