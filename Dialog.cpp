@@ -24,6 +24,7 @@
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
 #define BYTESLENGTH 4
+#define BUFFERSIZE 4*11*1000*1
 
 #define BLINKTIMETX 200 // ms
 #define BLINKTIMERX 500 // ms
@@ -644,7 +645,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_leTempEnv(new QLineEdit(this))
     , m_leTestName(new QLineEdit(this))
     , m_Port(new QSerialPort(this))
-    , m_ComPort(new ComPort(m_Port, STARTBYTE, STOPBYTE, BYTESLENGTH, true, 4*11*1000*1, this))
+    , m_ComPort(new ComPort(m_Port, STARTBYTE, STOPBYTE, BYTESLENGTH, true, BUFFERSIZE, this))
     , m_Protocol(new ADCtoCSVProtocol(m_ComPort, this))
     , m_BlinkTimeTxNone(new QTimer(this))
     , m_BlinkTimeRxNone(new QTimer(this))
