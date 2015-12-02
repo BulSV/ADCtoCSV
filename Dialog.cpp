@@ -367,6 +367,7 @@ void Dialog::stopRec()
     double deviation = 0.0;
     double voltAvg1ms = 0.0;
     int samplingRate = static_cast<int>(0.001/d_time)*DISCRETE;
+    m_sbSamplRate->setValue(samplingRate);
     int size = 0;
     try{
         if(!samplingRate) {
