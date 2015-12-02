@@ -25,7 +25,7 @@ ComPort::ComPort(QSerialPort *port,
       m_bufferSize(bufferSize)
 {
     itsReadData.clear();
-    itsPort->setReadBufferSize(m_bufferSize); // for reading 1 byte at a time
+    itsPort->setReadBufferSize(m_bufferSize); // for reading m_bufferSize bytes at the time
 
     connect(itsPort, SIGNAL(readyRead()), this, SLOT(readData()));
 }
