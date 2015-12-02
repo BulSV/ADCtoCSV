@@ -23,7 +23,7 @@ ComPort::ComPort(QSerialPort *port,
       m_isMaster(isMaster)
 {
     itsReadData.clear();
-    itsPort->setReadBufferSize(1); // for reading 1 byte at a time
+    itsPort->setReadBufferSize(44000); // for reading 1 byte at a time
 
     connect(itsPort, SIGNAL(readyRead()), this, SLOT(readData()));
 }
@@ -34,38 +34,40 @@ void ComPort::readData()
         QByteArray buffer;
 
         if(itsPort->bytesAvailable() > 0) {
-            buffer.append(itsPort->read(1));
+            buffer.append(itsPort->read(44000));
+            while (buffer.size()) {
+                if(!m_counter && buffer.at(0) == static_cast<char>(itsStartByte)) {
+                    itsReadData.append(buffer);
+                    ++m_counter;
+                } else if(m_counter && m_counter < itsPacketLenght) {
+                    itsReadData.append(buffer);
+                    ++m_counter;
 
-            if(!m_counter && buffer.at(0) == static_cast<char>(itsStartByte)) {
-                itsReadData.append(buffer);
-                ++m_counter;
-            } else if(m_counter && m_counter < itsPacketLenght) {
-                itsReadData.append(buffer);
-                ++m_counter;
-
-                if((m_counter == itsPacketLenght)
-                        && (itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte))) {
+                    if((m_counter == itsPacketLenght)
+                            && (itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte))) {
 #ifdef DEBUG1
-                    qDebug() << itsReadData.toHex();
+                        qDebug() << itsReadData.toHex();
 #endif
-                    emit DataIsReaded(true);
-                    emit ReadedData(itsReadData);
+                        emit DataIsReaded(true);
+                        emit ReadedData(itsReadData);
 
-                    if(!m_isMaster && !m_isDataWritten) {
-                        privateWriteData();
+                        if(!m_isMaster && !m_isDataWritten) {
+                            privateWriteData();
+                        }
+
+                        itsReadData.clear();
+                        m_counter = 0;
                     }
+                } else {
+#ifdef DEBUG1
+                    qDebug() << "Reading failure!";
+#endif
+                    emit DataIsReaded(false);
 
                     itsReadData.clear();
                     m_counter = 0;
                 }
-            } else {
-#ifdef DEBUG1
-                qDebug() << "Reading failure!";
-#endif
-                emit DataIsReaded(false);
-
-                itsReadData.clear();
-                m_counter = 0;
+                buffer.remove(0, 1);
             }
         }
     }
