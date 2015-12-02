@@ -17,6 +17,7 @@
 #include <qwt_legend.h>
 #include <qwt_plot_grid.h>
 #include <QMessageBox>
+#include <QDesktopWidget>
 
 #include "DataHandler.h"
 
@@ -670,7 +671,17 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_leTimer->setAlignment(Qt::AlignCenter);
-    QFont font("Consolas", 15);
+    QDesktopWidget desktop;
+    QFont font("Consolas");
+#ifdef DEBUG
+    qDebug() << "desktop.screenGeometry().width():" << desktop.screenGeometry().width();
+#endif
+    if (desktop.screenGeometry().width() > 1024
+            && desktop.screenGeometry().height() > 768) {
+        font.setPixelSize(20);
+    } else {
+        font.setPixelSize(12);
+    }
     m_leTimer->setFont(font);
     QRegExp regExpr("[0-5][0-9]:[0-5][0-9]:[0-5][0-9]");
     QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
