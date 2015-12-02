@@ -14,10 +14,11 @@ public:
             int stopByte = 0xAA,
             int packetLenght = 8,
             bool isMaster = true,
+            qint64 bufferSize = 1,
             QObject *parent = 0);
     QByteArray getReadData() const;
     void setWriteData(const QByteArray &data);
-    QByteArray getWriteData() const;    
+    QByteArray getWriteData() const;
 public slots:
     void writeData();
 signals:
@@ -40,6 +41,8 @@ private:
 
     bool m_isDataWritten;
     bool m_isMaster;
+
+    qint64 m_bufferSize;
 
     void privateWriteData();
 };

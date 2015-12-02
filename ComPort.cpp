@@ -12,6 +12,7 @@ ComPort::ComPort(QSerialPort *port,
                  int stopByte,
                  int packetLenght,
                  bool isMaster,
+                 qint64 bufferSize,
                  QObject *parent)
     : QObject(parent),
       itsPort(port),
@@ -20,10 +21,11 @@ ComPort::ComPort(QSerialPort *port,
       itsPacketLenght(packetLenght),
       m_counter(0),
       m_isDataWritten(true),
-      m_isMaster(isMaster)
+      m_isMaster(isMaster),
+      m_bufferSize(bufferSize)
 {
     itsReadData.clear();
-    itsPort->setReadBufferSize(44000); // for reading 1 byte at a time
+    itsPort->setReadBufferSize(m_bufferSize); // for reading 1 byte at a time
 
     connect(itsPort, SIGNAL(readyRead()), this, SLOT(readData()));
 }
@@ -34,7 +36,7 @@ void ComPort::readData()
         QByteArray buffer;
 
         if(itsPort->bytesAvailable() > 0) {
-            buffer.append(itsPort->read(44000));
+            buffer.append(itsPort->read(m_bufferSize));
             while (buffer.size()) {
                 if(!m_counter && buffer.at(0) == static_cast<char>(itsStartByte)) {
                     itsReadData.append(buffer);
