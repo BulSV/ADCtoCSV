@@ -23,7 +23,7 @@
 
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
-#define BYTESLENGTH 4
+#define BYTESLENGTH 4  // bytes
 #define BUFFERSIZE 4*11*1000*1  // bytes
 
 #define BLINKTIMETX 200 // ms
@@ -37,8 +37,8 @@
 
 #define VOLTFACTOR 5.174*2.2/4096.0 // V
 
-#define MINVOLT 1000.0
-#define MAXVOLT -1000.0
+#define MINVOLT 1000.0 // V
+#define MAXVOLT -1000.0 // V
 
 const double DISCRETE = 1.0;  // Accumulation Time, ms
 
@@ -109,6 +109,14 @@ void Dialog::view()
 
     // made window of app fixed size
     this->layout()->setSizeConstraint(QLayout::SetFixedSize);
+
+    this->setTabOrder(m_sbSamplRate, m_chbTimer);
+    this->setTabOrder(m_chbTimer, m_leTimer);
+    this->setTabOrder(m_leTimer, m_leTestName);
+    this->setTabOrder(m_leTestName, m_leSerialNum);
+    this->setTabOrder(m_leSerialNum, m_leModelName);
+    this->setTabOrder(m_leModelName, m_leTempEnv);
+    this->setTabOrder(m_leTempEnv, m_leTempLoad);
 }
 
 void Dialog::connections()
