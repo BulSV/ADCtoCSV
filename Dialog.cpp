@@ -481,6 +481,7 @@ void Dialog::stopRec()
     if(!m_leTempLoad->text().isEmpty()) {
         fileName += "_" + m_leTempLoad->text();
     }
+    fileName += "_" + m_lDeviation->text();
     fileName += ".CSV";
 #ifdef DEBUG
     qDebug() << "\n\n\n\n\n\n\n\n\n\n\n\n\nfileName" << fileName << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
