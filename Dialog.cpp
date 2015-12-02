@@ -24,7 +24,7 @@
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
 #define BYTESLENGTH 4
-#define BUFFERSIZE 4*11*1000*1
+#define BUFFERSIZE 4*11*1000*1  // bytes
 
 #define BLINKTIMETX 200 // ms
 #define BLINKTIMERX 500 // ms
