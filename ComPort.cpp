@@ -53,7 +53,6 @@ void ComPort::readData()
                         qDebug() << itsReadData.toHex();
 #endif
                         itsReadData.append(readData);
-                        emit DataIsReaded(true);
 
                         if(!m_isMaster && !m_isDataWritten) {
                             privateWriteData();
@@ -66,15 +65,17 @@ void ComPort::readData()
 #ifdef DEBUG1
                     qDebug() << "Reading failure!";
 #endif
-                    emit DataIsReaded(false);
 
-                    itsReadData.clear();
+                    readData.clear();
                     m_counter = 0;
                 }
                 buffer.remove(0, 1);
             }
             if(!itsReadData.isEmpty()) {
                 emit ReadedData(itsReadData);
+                emit DataIsReaded(true);
+            } else {
+                emit DataIsReaded(false);
             }
         }
     }
