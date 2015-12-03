@@ -237,21 +237,23 @@ void Dialog::received(bool isReceived)
         }
 
         if(m_isRecording) {
-            double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
-            if(m_maxVoltage < currentVoltage) {
-                m_maxVoltage = currentVoltage;
+            for (int i = 0; i < m_Protocol->getReadedData().value("VOLT").size(); ++i) {
+                double currentVoltage = m_Protocol->getReadedData().value("VOLT").at(i).toInt()*VOLTFACTOR;
+                if(m_maxVoltage < currentVoltage) {
+                    m_maxVoltage = currentVoltage;
 #ifdef DEBUG
-                qDebug() << "MAX Vp-p:" << currentVoltage;
+                    qDebug() << "MAX Vp-p:" << currentVoltage;
 #endif
-            }
-            if(m_minVoltage > currentVoltage) {
-                m_minVoltage = currentVoltage;
+                }
+                if(m_minVoltage > currentVoltage) {
+                    m_minVoltage = currentVoltage;
 #ifdef DEBUG
-                qDebug() << "MIN Vp-p:" << currentVoltage;
+                    qDebug() << "MIN Vp-p:" << currentVoltage;
 #endif
+                }
+                m_VoltList.push_back(QString::number(currentVoltage, 'f'));
+                m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
             }
-            m_VoltList.push_back(QString::number(currentVoltage, 'f'));
-            m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
         }
     }
 }

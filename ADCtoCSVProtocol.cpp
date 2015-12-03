@@ -27,7 +27,7 @@ void ADCtoCSVProtocol::setDataToWrite(const QMultiMap<QString, QString> &data)
     itsWriteData = data;
 }
 
-QMultiMap<QString, QString> ADCtoCSVProtocol::getReadedData() const
+QMultiMap<QString, QVector<QString> > ADCtoCSVProtocol::getReadedData() const
 {
     return itsReadData;
 }
@@ -38,10 +38,13 @@ void ADCtoCSVProtocol::readData(bool isReaded)
 
     if(isReaded) {
         QByteArray ba;
+        QVector<QString> readedData;
 
-        ba = itsComPort->getReadData();
-
-        itsReadData.insert(QString("VOLT"), QString::number(wordToInt(ba.mid(1, 2))));
+        for (int i = 0; i < itsComPort->getReadData().size(); ++i) {
+            ba = itsComPort->getReadData().at(i);
+            readedData.append(QString::number(wordToInt(ba.mid(1, 2))));
+        }
+        itsReadData.insert(QString("VOLT"), readedData);
 
         emit DataIsReaded(true);
     } else {

@@ -1,10 +1,10 @@
 #ifndef READSENSORPROTOCOL_H
 #define READSENSORPROTOCOL_H
 
+#include <QTimer>
+
 #include "IProtocol.h"
 #include "ComPort.h"
-
-#include <QTimer>
 
 class ADCtoCSVProtocol : public IProtocol
 {
@@ -12,7 +12,7 @@ class ADCtoCSVProtocol : public IProtocol
 public:
     explicit ADCtoCSVProtocol(ComPort *comPort, QObject *parent = 0);
     virtual void setDataToWrite(const QMultiMap<QString, QString> &data);
-    virtual QMultiMap<QString, QString> getReadedData() const;
+    virtual QMultiMap<QString, QVector<QString> > getReadedData() const;
 signals:
 
 public slots:
@@ -24,7 +24,7 @@ private:
     ComPort *itsComPort;
 
     QMultiMap<QString, QString> itsWriteData;
-    QMultiMap<QString, QString> itsReadData;
+    QMultiMap<QString, QVector<QString> > itsReadData;
 
     QTimer *m_resend;
     int m_numResends;

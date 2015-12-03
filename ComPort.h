@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QtSerialPort/QSerialPort>
 #include <QByteArray>
+#include <QVector>
 
 class ComPort: public QObject
 {
@@ -16,14 +17,14 @@ public:
             bool isMaster = true,
             qint64 bufferSize = 1,
             QObject *parent = 0);
-    QByteArray getReadData() const;
+    QVector<QByteArray> getReadData() const;
     void setWriteData(const QByteArray &data);
     QByteArray getWriteData() const;
 public slots:
     void writeData();
 signals:
     void DataIsReaded(bool);
-    void ReadedData(QByteArray);
+    void ReadedData(QVector<QByteArray>);
     void DataIsWrited(bool);
     void WritedData(QByteArray);
 private slots:
@@ -31,7 +32,7 @@ private slots:
 private:
     QSerialPort *itsPort;
 
-    QByteArray itsReadData;
+    QVector<QByteArray> itsReadData;
     QByteArray itsWriteData;
 
     int itsStartByte;
