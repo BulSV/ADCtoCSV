@@ -18,6 +18,7 @@
 #include <qwt_plot_grid.h>
 #include <QMessageBox>
 #include <QDesktopWidget>
+#include <QGroupBox>
 
 #include "DataHandler.h"
 
@@ -83,13 +84,23 @@ void Dialog::view()
     infoLayout->addWidget(m_leTempLoad, 4, 1);
     infoLayout->setSpacing(5);
 
+    QGridLayout *modesLayout = new QGridLayout;
+    modesLayout->addWidget(m_rbNormal, 0, 0);
+    modesLayout->addWidget(m_rbContinuous, 1, 0);
+    modesLayout->setSpacing(5);
+
+    QGroupBox *gbModes = new QGroupBox("Display Modes", this);
+    gbModes->setLayout(modesLayout);
+
     QGridLayout *voltAvgLayout = new QGridLayout;
-    voltAvgLayout->addWidget(new QLabel("Voltage, V", this), 0, 0);
+    voltAvgLayout->addWidget(m_lVoltAvgName, 0, 0);
     voltAvgLayout->addWidget(m_lVoltAvg, 0, 2);
-    voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
-    voltAvgLayout->addWidget(m_lDeviation, 1, 2);
-    voltAvgLayout->addWidget(new QLabel("Vp-p, mV", this), 2, 0);
-    voltAvgLayout->addWidget(m_lVpp, 2, 2);
+    voltAvgLayout->addWidget(new QLabel("Current Deviation, mV", this), 1, 0);
+    voltAvgLayout->addWidget(m_lCurrentDeviation, 1, 2);
+    voltAvgLayout->addWidget(new QLabel("Deviation per Minute, mV", this), 2, 0);
+    voltAvgLayout->addWidget(m_lDeviationPerMinute, 2, 2);
+    voltAvgLayout->addWidget(new QLabel("Vp-p, mV", this), 3, 0);
+    voltAvgLayout->addWidget(m_lVpp, 3, 2);
     voltAvgLayout->setSpacing(5);
 
     QGridLayout *graphLayout = new QGridLayout;
@@ -101,7 +112,8 @@ void Dialog::view()
     allLayouts->addItem(portLayout, 0, 0);
     allLayouts->addItem(controlLayout, 0, 1);
     allLayouts->addItem(infoLayout, 1, 0, 1, 2);
-    allLayouts->addItem(voltAvgLayout, 2, 0, 1, 4);
+    allLayouts->addWidget(gbModes, 2, 0, 4, 1);
+    allLayouts->addItem(voltAvgLayout, 2, 1, 1, 3);
     allLayouts->addItem(graphLayout, 0, 3, 4, 4, Qt::AlignCenter);
     allLayouts->setSpacing(5);
 
@@ -284,8 +296,9 @@ void Dialog::record()
         m_SecondList.clear();
         m_VoltList.clear();
 
+        m_lVoltAvgName->setText("Voltage, V");
         m_lVoltAvg->setText("NONE");
-        m_lDeviation->setText("NONE");
+        m_lDeviationPerMinute->setText("NONE");
         m_lVpp->setText("NONE");
 
         m_PlotVolts.clear();
@@ -371,6 +384,7 @@ void Dialog::stopRec()
     }
     avgVolt /= m_VoltList.size();
     m_lVoltAvg->setText(QString::number(avgVolt, 'f', 3));
+    m_lVoltAvgName->setText("Average Voltage, V");
     // end Calculatin Average Voltage
     // Calculating Deviation
     double deviation = 0.0;
@@ -415,7 +429,7 @@ void Dialog::stopRec()
     }
 
     deviation = qSqrt(deviation*samplingRate/(m_VoltList.size()))*1000;
-    m_lDeviation->setText(QString::number(deviation, 'f', 3));
+    m_lDeviationPerMinute->setText(QString::number(deviation, 'f', 3));
     // end Calcualtin Deviation
     m_TimeDisplay->stop();
     m_BlinkTimeRec->stop();
@@ -491,7 +505,7 @@ void Dialog::stopRec()
     if(!m_leTempLoad->text().isEmpty()) {
         fileName += "_" + m_leTempLoad->text();
     }
-    fileName += "_" + m_lDeviation->text();
+    fileName += "_" + m_lDeviationPerMinute->text();
     fileName += ".CSV";
 #ifdef DEBUG
     qDebug() << "\n\n\n\n\n\n\n\n\n\n\n\n\nfileName" << fileName << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
@@ -666,7 +680,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_BlinkTimeRec(new QTimer(this))
     , m_TimeDisplay(new QTimer(this))
     , m_lVoltAvg(new QLabel("NONE", this))
-    , m_lDeviation(new QLabel("NONE", this))
+    , m_lCurrentDeviation(new QLabel("NONE", this))
+    , m_lDeviationPerMinute(new QLabel("NONE", this))
     , m_lVpp(new QLabel("NONE", this))
     , m_TimeVoltDisplay(new QTimer(this))
     , m_plot(new QwtPlot(this))
@@ -674,6 +689,9 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_PrevTime(0.0)
     , m_maxVoltage(MAXVOLT)
     , m_minVoltage(MINVOLT)
+    , m_rbNormal(new QRadioButton("Normal", this))
+    , m_rbContinuous(new QRadioButton("Continuous", this))
+    , m_lVoltAvgName(new QLabel("Voltage, V", this))
 {
     setWindowTitle(title);
     view();
@@ -701,7 +719,8 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     m_lTickTime->setFont(font);
     m_lVoltAvg->setFont(font);
-    m_lDeviation->setFont(font);
+    m_lCurrentDeviation->setFont(font);
+    m_lDeviationPerMinute->setFont(font);
     m_lVpp->setFont(font);
 
     QStringList portsNames;
@@ -716,6 +735,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     QStringList bauds;
     bauds << "921600" << "115200";
     m_cbBaud->addItems(bauds);
+
+    m_rbNormal->setChecked(true);
 
     m_leTimer->setEnabled(false);
     m_bStop->setEnabled(false);

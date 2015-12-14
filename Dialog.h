@@ -16,6 +16,7 @@
 #include <QRegExpValidator>
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
+#include <QRadioButton>
 #include "ComPort.h"
 #include "ADCtoCSVProtocol.h"
 
@@ -64,7 +65,8 @@ class Dialog : public QWidget
     QTimer *m_TimeDisplay;
 
     QLabel *m_lVoltAvg;
-    QLabel *m_lDeviation;
+    QLabel *m_lCurrentDeviation;
+    QLabel *m_lDeviationPerMinute;
     QLabel *m_lVpp;
     QTimer *m_TimeVoltDisplay;
 
@@ -76,6 +78,11 @@ class Dialog : public QWidget
 
     double m_maxVoltage;
     double m_minVoltage;
+
+    QRadioButton *m_rbNormal;
+    QRadioButton *m_rbContinuous;
+
+    QLabel *m_lVoltAvgName;
 
     void view();
     void connections();
