@@ -42,6 +42,14 @@
 
 const double DISCRETE = 1.0;  // Accumulation Time, ms
 
+const double XMINPLOT = 0.0; // Minimum time at start
+const double XMAXPLOT = 60.0; // Maximum time at start
+const double XSTEPPLOT = 10.0; // Step time
+
+const double YMINPLOT = 0.0; // Minimum Voltage at start
+const double YMAXPLOT = 5.0; // Maximum Voltage at start
+const double YSTEPPLOT = 0.5; // Step Voltage
+
 void Dialog::view()
 {
     QGridLayout *portLayout = new QGridLayout;
@@ -291,10 +299,16 @@ void Dialog::record()
         m_PlotVolts.clear();
         m_PlotTime.clear();
         m_PrevTime = 0.0;
+        m_PrevVolt = 0.0;
         m_plot->setAxisScale( QwtPlot::xBottom,
-                              static_cast<int>(m_PrevTime),
-                              60 + static_cast<int>(m_PrevTime),
-                              10 );
+                              XMINPLOT + static_cast<int>(m_PrevTime),
+                              XMAXPLOT + static_cast<int>(m_PrevTime),
+                              XSTEPPLOT );
+
+        m_plot->setAxisScale( QwtPlot::yLeft,
+                              YMINPLOT + static_cast<int>(m_PrevVolt),
+                              YMAXPLOT + static_cast<int>(m_PrevVolt),
+                              YSTEPPLOT );
 
         m_maxVoltage = MAXVOLT;
         m_minVoltage = MINVOLT;
@@ -614,20 +628,21 @@ void Dialog::voltDisplay()
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);
-    if(m_LastRecieveTime - m_PrevTime > 60.0) {
-        m_PrevTime += 10.0;
+    if(m_LastRecieveTime - m_PrevTime > XMAXPLOT) {
+        m_PrevTime += XSTEPPLOT;
     }
-    if(m_LastRecieveTime > 60.0) {
+    if(m_LastRecieveTime > XMAXPLOT) {
         m_PlotVolts.removeFirst();
         m_PlotTime.removeFirst();
     }
     m_Curve->setSamples(m_PlotTime, m_PlotVolts);
-    if(m_LastRecieveTime - m_PrevTime >= 10.0) {
+    if(m_LastRecieveTime - m_PrevTime >= XSTEPPLOT) {
         m_plot->setAxisScale( QwtPlot::xBottom,
-                              static_cast<int>(m_PrevTime),
-                              60 + static_cast<int>(m_PrevTime),
-                              10 );
+                              XMINPLOT + static_cast<int>(m_PrevTime),
+                              XMAXPLOT + static_cast<int>(m_PrevTime),
+                              XSTEPPLOT );
     }
+
     m_plot->replot();
     qApp->processEvents();
 }
@@ -672,6 +687,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_plot(new QwtPlot(this))
     , m_Curve(new QwtPlotCurve)
     , m_PrevTime(0.0)
+    , m_PrevVolt(0.0)
     , m_maxVoltage(MAXVOLT)
     , m_minVoltage(MINVOLT)
 {
@@ -773,9 +789,9 @@ Dialog::Dialog(QString title, QWidget *parent)
     timeTitle.setFont(QFont("Verdana", 10));
     m_plot->setAxisTitle( QwtPlot::xBottom, timeTitle );
     m_plot->setAxisScale( QwtPlot::xBottom,
-                          0,
-                          60,
-                          10 );
+                          XMINPLOT,
+                          XMAXPLOT,
+                          XSTEPPLOT );
     m_plot->setAxisMaxMajor( QwtPlot::xBottom, 1 );
     m_plot->setAxisMaxMinor( QwtPlot::xBottom, 2 );
     m_plot->setAxisAutoScale( QwtPlot::xBottom, false );
@@ -785,9 +801,9 @@ Dialog::Dialog(QString title, QWidget *parent)
     voltTitle.setFont(QFont("Verdana", 10));
     m_plot->setAxisTitle( QwtPlot::yLeft, voltTitle );
     m_plot->setAxisScale( QwtPlot::yLeft,
-                          0,
-                          2.5,
-                          0.25 );
+                          YMINPLOT,
+                          YMAXPLOT,
+                          YSTEPPLOT );
     m_plot->setAxisMaxMajor( QwtPlot::yLeft, 10 );
     m_plot->setAxisMaxMinor( QwtPlot::yLeft, 10 );
     m_plot->setAxisAutoScale( QwtPlot::yLeft, false );
