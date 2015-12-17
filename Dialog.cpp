@@ -1,6 +1,6 @@
-#ifdef DEBUG
+//#ifdef DEBUG
 #include <QDebug>
-#endif
+//#endif
 
 #include "Dialog.h"
 #include <QGridLayout>
@@ -42,6 +42,10 @@
 #define MAXVOLT -1000.0 // V
 
 const double DISCRETE = 1.0;  // Accumulation Time, ms
+
+const int CALCRANGE = 1000; // Calculation range for continuous mode, ms
+
+const int SIGMANUMBER = 60; // Number of deviations in 1 minute
 
 void Dialog::view()
 {
@@ -151,6 +155,9 @@ void Dialog::connections()
     connect(m_TimeDisplay, SIGNAL(timeout()), this, SLOT(timeDisplay()));
     connect(m_TimeVoltDisplay, SIGNAL(timeout()), this, SLOT(voltDisplay()));
 
+    connect(m_rbNormal, SIGNAL(clicked(bool)), this, SLOT(normalMode(bool)));
+    connect(m_rbContinuous, SIGNAL(clicked(bool)), this, SLOT(continuousMode(bool)));
+
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
 }
@@ -248,22 +255,73 @@ void Dialog::received(bool isReceived)
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
-        if(m_isRecording) {
+        if(m_isRecording || m_rbContinuous->isChecked()) {
+            if(m_CurrentTime->isNull()) {
+                m_CurrentTime->start();
+            }
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
             if(m_maxVoltage < currentVoltage) {
                 m_maxVoltage = currentVoltage;
-#ifdef DEBUG
-                qDebug() << "MAX Vp-p:" << currentVoltage;
-#endif
             }
             if(m_minVoltage > currentVoltage) {
                 m_minVoltage = currentVoltage;
-#ifdef DEBUG
-                qDebug() << "MIN Vp-p:" << currentVoltage;
-#endif
             }
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
-            m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
+            if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 1.0) {
+                m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
+                double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
+                int samplingRate = static_cast<int>(0.001/d_time)*DISCRETE;
+                // Continuous mode
+                if(m_rbContinuous->isChecked() && m_VoltList.size() >= samplingRate*CALCRANGE) {
+//#ifdef DEBUG
+                    qDebug() << "m_VoltList.size()" << m_VoltList.size();
+                    qDebug() << "samplingRate*CALCRANGE" << samplingRate*CALCRANGE;
+                    qDebug() << "samplingRate" << samplingRate;
+                    qDebug() << "m_LastRecieveTime" << m_LastRecieveTime;
+                    qDebug() << "d_time" << d_time;
+//#endif
+                    voltDisplay();
+                    // Calculating Average Voltage in 1 ms
+                    QVector<double> avgVolt_ms;
+                    double volt_ms = 0.0;
+                    for(int i = 1; i < m_VoltList.size() + 1; ++i) {
+                        volt_ms += m_VoltList.at(i - 1).toDouble();
+                        if(!(i % (samplingRate + 1))) {
+                            avgVolt_ms.push_back(volt_ms/samplingRate);
+                            volt_ms = 0.0;
+                        }
+                    }
+                    // Calculating Average Voltage
+                    double avgVolt = 0.0;
+                    for(int i = 0; i < avgVolt_ms.size(); ++i) {
+                        avgVolt += avgVolt_ms.at(i);
+                    }
+                    avgVolt /= avgVolt_ms.size();
+                    m_lVoltAvg->setText(QString::number(avgVolt, 'f', 3));
+                    double sigma = 0.0;
+                    for(int i = 0; i < avgVolt_ms.size(); ++i) {
+                        sigma += qPow(avgVolt - avgVolt_ms.at(i), 2);
+                    }
+//#ifdef DEBUG
+                    qDebug() << "Current SIGMA" << sigma;
+//#endif
+                    sigma = qSqrt(sigma/avgVolt_ms.size());
+//#ifdef DEBUG
+                    qDebug() << "Current SIGMA" << sigma;
+//#endif
+                    ++m_SigmaNumber;
+                    if(m_SigmaNumber <= SIGMANUMBER && m_SigmaNumber > 1) {
+                        m_PrevSigma = qSqrt((qPow(m_PrevSigma, 2)*(m_SigmaNumber - 1) + qPow(sigma, 2))/avgVolt_ms.size());
+                    } else if(m_SigmaNumber > SIGMANUMBER){
+                        m_SigmaNumber = 0;
+                        m_lDeviationPerMinute->setText(QString::number(m_PrevSigma, 'f', 3));
+                        m_PrevSigma = 0;
+                    } else {
+                        m_PrevSigma = sigma;
+                    }
+                    m_lCurrentDeviation->setText(QString::number(m_PrevSigma, 'f', 3));
+                }
+            }
         }
     }
 }
@@ -370,9 +428,6 @@ void Dialog::setRate()
 
 void Dialog::stopRec()
 {
-#ifdef DEBUG
-    qDebug() << "Stopping recording...";
-#endif
     m_TimeVoltDisplay->stop();
 
     double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
@@ -401,23 +456,12 @@ void Dialog::stopRec()
         QMessageBox::critical(this, "Critical Error", QString(e.what()) + "\nSampling rate must be greater than 1kHz");
     }
 
-#ifdef DEBUG
-    qDebug() << "m_LastRecieveTime" << m_LastRecieveTime;
-    qDebug() << "m_VoltList.size()" << m_VoltList.size();
-    qDebug() << "Sampling Rate" << samplingRate;
-    qDebug() << "size" << size;
-    qDebug() << "avgVolt" << avgVolt;
-#endif
     for(int j = 0; j < size; j = j + samplingRate) {
         for(int i = 0; i < samplingRate; ++i) {
             voltAvg1ms += m_VoltList.at(j + i).toDouble();
         }
         voltAvg1ms /= samplingRate;
         deviation += qPow(voltAvg1ms - avgVolt, 2);
-#ifdef DEBUG
-        qDebug() << "voltAvg1ms" << voltAvg1ms;
-        qDebug() << "deviation" << deviation;
-#endif
         voltAvg1ms = 0.0;
     }
     if(m_VoltList.size() > size) {
@@ -507,18 +551,12 @@ void Dialog::stopRec()
     }
     fileName += "_" + m_lDeviationPerMinute->text();
     fileName += ".CSV";
-#ifdef DEBUG
-    qDebug() << "\n\n\n\n\n\n\n\n\n\n\n\n\nfileName" << fileName << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-#endif
 
     DataHandler dataHandler;
     dataHandler.dumpDataToFile(fileName, m_Data);
 
     m_SecondList.clear();
     m_VoltList.clear();
-#ifdef DEBUG
-    qDebug() << "DATA SIZE:" << m_Data.size();
-#endif
 }
 
 void Dialog::setTime(int sec, int minute, int hour)
@@ -562,10 +600,7 @@ void Dialog::timeCountUp()
 void Dialog::timeCountdown()
 {
     QStringList timeList = m_leTimer->text().split(':');
-#ifdef DEBUG
-    qDebug() << "TIMER TEXT:" << m_leTimer->text();
-    qDebug() << "TIME LIST:" << timeList;
-#endif
+
     if(timeList.at(0).isEmpty()) {
         timeList.replace(0, "00");
     }
@@ -575,16 +610,11 @@ void Dialog::timeCountdown()
     if(timeList.at(2).isEmpty()) {
         timeList.replace(2, "00");
     }
-#ifdef DEBUG
-    qDebug() << "TIME LIST:" << timeList;
-#endif
+
     bool ok;
     int hour = timeList.at(0).toInt(&ok);
     int minute = timeList.at(1).toInt(&ok);
     int sec = timeList.at(2).toInt(&ok);
-#ifdef DEBUG
-    qDebug() << "OK?" << ok;
-#endif
     int time = sec + 60*minute + 60*60*hour;
 
     time -= m_CurrentTime->elapsed()/1000;
@@ -599,12 +629,7 @@ void Dialog::timeCountdown()
         hour = 0;
         stopRec();
     }
-#ifdef DEBUG
-    qDebug() << "hour:" << hour;
-    qDebug() << "minute:" << minute;
-    qDebug() << "sec:" << sec;
-    qDebug() << "time:" << time;
-#endif
+
     setTime(sec, minute, hour);
 }
 
@@ -620,11 +645,6 @@ void Dialog::timeDisplay()
 void Dialog::voltDisplay()
 {
     m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
-#ifdef DEBUG
-                qDebug() << "[*]MAX Vp-p:" << m_maxVoltage;
-                qDebug() << "[*]MIN Vp-p:" << m_minVoltage;
-                qDebug() << "[*]Vp-p:" << 1000*(m_maxVoltage - m_minVoltage);
-#endif
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);
@@ -644,6 +664,24 @@ void Dialog::voltDisplay()
     }
     m_plot->replot();
     qApp->processEvents();
+}
+
+void Dialog::normalMode(bool isNormal)
+{
+    if(!m_bStart->isEnabled()) {
+        m_bRec->setEnabled(true);
+    }
+    m_lCurrentDeviation->setEnabled(false);
+    m_SigmaNumber = 0;
+}
+
+void Dialog::continuousMode(bool isContinuous)
+{
+    m_bRec->setEnabled(false);
+    m_lCurrentDeviation->setEnabled(true);
+    if(!m_bStart->isEnabled()) {
+        m_bStop->setEnabled(true);
+    }
 }
 
 Dialog::Dialog(QString title, QWidget *parent)
@@ -692,6 +730,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_rbNormal(new QRadioButton("Normal", this))
     , m_rbContinuous(new QRadioButton("Continuous", this))
     , m_lVoltAvgName(new QLabel("Voltage, V", this))
+    , m_PrevSigma(0.0)
+    , m_SigmaNumber(0)
 {
     setWindowTitle(title);
     view();
@@ -702,9 +742,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_leTimer->setAlignment(Qt::AlignCenter);
     QDesktopWidget desktop;
     QFont font("Consolas");
-#ifdef DEBUG
-    qDebug() << "desktop.screenGeometry().width():" << desktop.screenGeometry().width();
-#endif
+
     if (desktop.screenGeometry().width() > 1024
             && desktop.screenGeometry().height() > 768) {
         font.setPixelSize(20);
@@ -720,6 +758,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_lTickTime->setFont(font);
     m_lVoltAvg->setFont(font);
     m_lCurrentDeviation->setFont(font);
+    m_lCurrentDeviation->setEnabled(false);
     m_lDeviationPerMinute->setFont(font);
     m_lVpp->setFont(font);
 

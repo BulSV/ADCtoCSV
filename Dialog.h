@@ -84,6 +84,9 @@ class Dialog : public QWidget
 
     QLabel *m_lVoltAvgName;
 
+    double m_PrevSigma;
+    int m_SigmaNumber;
+
     void view();
     void connections();
     void timeCountUp();
@@ -104,6 +107,8 @@ private slots:
     void stopRec();
     void timeDisplay();
     void voltDisplay();
+    void normalMode(bool isNormal);
+    void continuousMode(bool isContinuous);
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();

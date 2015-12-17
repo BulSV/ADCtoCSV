@@ -19,10 +19,6 @@ DataHandler::DataHandler()
 void DataHandler::dumpDataToFile(QString fileName, QMultiMap<QString, QList<QString> > &data)
 {
     if(data.value("SEC").size() < 11 || data.value("VOLT").size() < 11) {
-#ifdef DEBUG
-        qDebug() << "data.value(\"SEC\").size():" << data.value("SEC").size();
-        qDebug() << "data.value(\"VOLT\").size():" << data.value("VOLT").size();
-#endif
         return;
     }
     QFile file(fileName);
