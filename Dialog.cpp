@@ -91,13 +91,21 @@ void Dialog::view()
     infoLayout->addWidget(m_leTempLoad, 4, 1);
     infoLayout->setSpacing(5);
 
+    QGridLayout *modesLayout = new QGridLayout;
+    modesLayout->addWidget(m_rbYes, 0, 0);
+    modesLayout->addWidget(m_rbNo, 1, 0);
+    modesLayout->setSpacing(5);
+
+    QGroupBox *modesGB = new QGroupBox("Write to file", this);
+    modesGB->setLayout(modesLayout);
+
     QGridLayout *voltAvgLayout = new QGridLayout;
     voltAvgLayout->addWidget(new QLabel("Voltage, V", this), 0, 0);
-    voltAvgLayout->addWidget(m_lVoltAvg, 0, 2);
+    voltAvgLayout->addWidget(m_lVoltAvg, 0, 1);
     voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
-    voltAvgLayout->addWidget(m_lDeviation, 1, 2);
+    voltAvgLayout->addWidget(m_lDeviation, 1, 1);
     voltAvgLayout->addWidget(new QLabel("Vp-p, mV", this), 2, 0);
-    voltAvgLayout->addWidget(m_lVpp, 2, 2);
+    voltAvgLayout->addWidget(m_lVpp, 2, 1);
     voltAvgLayout->setSpacing(5);
 
     QGridLayout *graphLayout = new QGridLayout;
@@ -109,7 +117,8 @@ void Dialog::view()
     allLayouts->addItem(portLayout, 0, 0);
     allLayouts->addItem(controlLayout, 0, 1);
     allLayouts->addItem(infoLayout, 1, 0, 1, 2);
-    allLayouts->addItem(voltAvgLayout, 2, 0, 1, 4);
+    allLayouts->addItem(voltAvgLayout, 2, 0, 1, 1);
+    allLayouts->addWidget(modesGB, 2, 1, 3, 1);
     allLayouts->addItem(graphLayout, 0, 3, 4, 4, Qt::AlignCenter);
     allLayouts->setSpacing(5);
 
@@ -690,6 +699,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_PrevVolt(0.0)
     , m_maxVoltage(MAXVOLT)
     , m_minVoltage(MINVOLT)
+    , m_rbYes(new QRadioButton("Yes", this))
+    , m_rbNo(new QRadioButton("No", this))
 {
     setWindowTitle(title);
     view();
@@ -732,6 +743,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     QStringList bauds;
     bauds << "921600" << "115200";
     m_cbBaud->addItems(bauds);
+
+    m_rbYes->setChecked(true);
 
     m_leTimer->setEnabled(false);
     m_bStop->setEnabled(false);

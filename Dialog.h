@@ -16,6 +16,8 @@
 #include <QRegExpValidator>
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
+#include <QGroupBox>
+#include <QRadioButton>
 #include "ComPort.h"
 #include "ADCtoCSVProtocol.h"
 
@@ -77,6 +79,9 @@ class Dialog : public QWidget
 
     double m_maxVoltage;
     double m_minVoltage;
+
+    QRadioButton *m_rbYes;
+    QRadioButton *m_rbNo;
 
     void view();
     void connections();
