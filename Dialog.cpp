@@ -461,67 +461,70 @@ void Dialog::stopRec()
     }
 
     m_isRecording = false;
-    /*
+
+    if(m_rbYes->isChecked()) {
+        /*
     "NUM", "NAME", "LOAD", "ENV", "TEST", "TIME", "RATE", "SEC", "VOLT"
     */
-    QList<QString> dataList;
+        QList<QString> dataList;
 
-    dataList.push_back(m_leTestName->text());
-    m_Data.insert("TEST", dataList);
-    dataList.clear();
+        dataList.push_back(m_leTestName->text());
+        m_Data.insert("TEST", dataList);
+        dataList.clear();
 
-    dataList.push_back(m_leModelName->text());
-    m_Data.insert("NAME", dataList);
-    dataList.clear();
+        dataList.push_back(m_leModelName->text());
+        m_Data.insert("NAME", dataList);
+        dataList.clear();
 
-    dataList.push_back(m_leSerialNum->text());
-    m_Data.insert("NUM", dataList);
-    dataList.clear();
+        dataList.push_back(m_leSerialNum->text());
+        m_Data.insert("NUM", dataList);
+        dataList.clear();
 
-    dataList.push_back(m_leTempLoad->text());
-    m_Data.insert("LOAD", dataList);
-    dataList.clear();
+        dataList.push_back(m_leTempLoad->text());
+        m_Data.insert("LOAD", dataList);
+        dataList.clear();
 
-    dataList.push_back(m_leTempEnv->text());
-    m_Data.insert("ENV", dataList);
-    dataList.clear();
+        dataList.push_back(m_leTempEnv->text());
+        m_Data.insert("ENV", dataList);
+        dataList.clear();
 
-    dataList.push_back(m_sbSamplRate->text());
-    m_Data.insert("RATE", dataList);
-    dataList.clear();
+        dataList.push_back(m_sbSamplRate->text());
+        m_Data.insert("RATE", dataList);
+        dataList.clear();
 
-    dataList.push_back(m_SecondList.last());
-    m_Data.insert("TIME", dataList);
-    dataList.clear();
+        dataList.push_back(m_SecondList.last());
+        m_Data.insert("TIME", dataList);
+        dataList.clear();
 
-    m_Data.insert("VOLT", m_VoltList);
-    m_Data.insert("SEC", m_SecondList);
+        m_Data.insert("VOLT", m_VoltList);
+        m_Data.insert("SEC", m_SecondList);
 
-    QString fileName;
-    fileName = "ADC";
-    if(!m_leTestName->text().isEmpty()) {
-        fileName += "_" + m_leTestName->text();
-    }
-    if(!m_leModelName->text().isEmpty()) {
-        fileName += "_" + m_leModelName->text();
-    }
-    if(!m_leSerialNum->text().isEmpty()) {
-        fileName += "_#" + m_leSerialNum->text();
-    }
-    if(!m_leTempEnv->text().isEmpty()) {
-        fileName += "_" + m_leTempEnv->text();
-    }
-    if(!m_leTempLoad->text().isEmpty()) {
-        fileName += "_" + m_leTempLoad->text();
-    }
-    fileName += "_" + m_lDeviation->text();
-    fileName += ".CSV";
+        QString fileName;
+        fileName = "ADC";
+        if(!m_leTestName->text().isEmpty()) {
+            fileName += "_" + m_leTestName->text();
+        }
+        if(!m_leModelName->text().isEmpty()) {
+            fileName += "_" + m_leModelName->text();
+        }
+        if(!m_leSerialNum->text().isEmpty()) {
+            fileName += "_#" + m_leSerialNum->text();
+        }
+        if(!m_leTempEnv->text().isEmpty()) {
+            fileName += "_" + m_leTempEnv->text();
+        }
+        if(!m_leTempLoad->text().isEmpty()) {
+            fileName += "_" + m_leTempLoad->text();
+        }
+        fileName += "_" + m_lDeviation->text();
+        fileName += ".CSV";
 #ifdef DEBUG
-    qDebug() << "\n\n\n\n\n\n\n\n\n\n\n\n\nfileName" << fileName << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+        qDebug() << "\n\n\n\n\n\n\n\n\n\n\n\n\nfileName" << fileName << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 #endif
 
-    DataHandler dataHandler;
-    dataHandler.dumpDataToFile(fileName, m_Data);
+        DataHandler dataHandler;
+        dataHandler.dumpDataToFile(fileName, m_Data);
+    }
 
     m_SecondList.clear();
     m_VoltList.clear();
