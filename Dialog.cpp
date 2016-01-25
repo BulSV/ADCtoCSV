@@ -64,15 +64,29 @@ void Dialog::view()
     m_sbSamplRate->setMaximumWidth(100);
     m_leTimer->setMaximumWidth(100);
 
+    QGridLayout *measureTimeLayout = new QGridLayout;
+    measureTimeLayout->addWidget(m_chbTimer, 0, 0, 1, 2);
+    measureTimeLayout->addWidget(new QLabel("Set", this), 1, 0);
+    measureTimeLayout->addWidget(m_leTimer, 1, 1);
+    measureTimeLayout->addWidget(new QLabel("Current", this), 2, 0);
+    measureTimeLayout->addWidget(m_lTickTime, 2, 1, 1, 1, Qt::AlignCenter);
+    measureTimeLayout->setSpacing(5);
+
+    QGroupBox *gbMeasureTime = new QGroupBox("Measure Time", this);
+    gbMeasureTime->setLayout(measureTimeLayout);
+
+    QGridLayout *playButtonsLayout = new QGridLayout;
+    playButtonsLayout->addWidget(m_bRec, 0, 0);
+    playButtonsLayout->addWidget(m_bStopRec, 0, 1);
+    playButtonsLayout->setSpacing(5);
+
     QGridLayout *controlLayout = new QGridLayout;
-    controlLayout->addWidget(new QLabel("Sampling Rate, kHz", this), 0, 0);
-    controlLayout->addWidget(m_sbSamplRate, 0, 1);
-    controlLayout->addWidget(m_bSetRate, 1, 0, 1, 2);
-    controlLayout->addWidget(m_chbTimer, 3, 0);
-    controlLayout->addWidget(m_leTimer, 3, 1);
-    controlLayout->addWidget(m_lTickTime, 4, 0, 1, 2, Qt::AlignCenter);
-    controlLayout->addWidget(m_bRec, 5, 0);
-    controlLayout->addWidget(m_bStopRec, 5, 1);
+    controlLayout->addWidget(new QLabel("Samples in", this), 0, 0);
+    controlLayout->addWidget(m_cbTimeDiscrete, 0, 1);
+    controlLayout->addWidget(m_sbSamplRate, 0, 2);
+    controlLayout->addWidget(m_bSetRate, 1, 0, 1, 3);
+    controlLayout->addWidget(gbMeasureTime, 2, 0, 3, 3);
+    controlLayout->addItem(playButtonsLayout, 5, 0, 1, 3);
     controlLayout->setSpacing(5);
 
     QGridLayout *infoLayout = new QGridLayout;
@@ -444,14 +458,14 @@ void Dialog::stopRec()
     // Calculating Deviation
     double deviation = 0.0;
     double voltAvg1ms = 0.0;
-    int samplingRate = static_cast<int>(0.001/d_time)*DISCRETE;
+    double samplingRate = DISCRETE*d_time;
     m_sbSamplRate->setValue(samplingRate);
     int size = 0;
     try{
         if(!samplingRate) {
             throw std::overflow_error("Divide by zerro accured!");
         }
-        size = samplingRate*(m_VoltList.size()/samplingRate);
+        size = m_VoltList.size();
     } catch(std::overflow_error &e) {
         QMessageBox::critical(this, "Critical Error", QString(e.what()) + "\nSampling rate must be greater than 1kHz");
     }
@@ -696,6 +710,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_leTimer(new QLineEdit(this))
     , m_lTickTime(new QLabel("00:00:00", this))
     , m_bRec(new QPushButton(QIcon(":/Resources/startRecToFile.png"), QString::null, this))
+    , m_cbTimeDiscrete(new QComboBox(this))
     , m_sbSamplRate(new QSpinBox(this))
     , m_bSetRate(new QPushButton("Set Rate", this))
     , m_bStopRec(new QPushButton(QIcon(":/Resources/stopRecToFile.png"), QString::null, this))
@@ -736,6 +751,10 @@ Dialog::Dialog(QString title, QWidget *parent)
     setWindowTitle(title);
     view();
     connections();
+
+    QStringList timeDiscretes;
+    timeDiscretes << "ms" << "s" << "min";
+    m_cbTimeDiscrete->addItems(timeDiscretes);
 
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");

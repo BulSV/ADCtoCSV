@@ -34,6 +34,7 @@ class Dialog : public QWidget
     QLineEdit *m_leTimer;
     QLabel *m_lTickTime;
     QPushButton *m_bRec;
+    QComboBox *m_cbTimeDiscrete;
     QSpinBox *m_sbSamplRate;
     QPushButton *m_bSetRate;
     QPushButton *m_bStopRec;
