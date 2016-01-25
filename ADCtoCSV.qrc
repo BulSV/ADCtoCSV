@@ -10,5 +10,7 @@
         <file>Resources/ADCtoCSV.ico</file>
         <file>Resources/ADCtoCSV.png</file>
         <file>Resources/ADCtoCSV.svg</file>
+        <file>Resources/Play.svg</file>
+        <file>Resources/Play.png</file>
     </qresource>
 </RCC>

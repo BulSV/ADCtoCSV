@@ -682,19 +682,19 @@ void Dialog::voltDisplay()
 
 void Dialog::normalMode(bool isNormal)
 {
-    if(!m_bStart->isEnabled()) {
-        m_bRec->setEnabled(true);
+    if(!m_bStart->isEnabled()) {        
+        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
     }
     m_lCurrentDeviation->setEnabled(false);
     m_SigmaNumber = 0;
 }
 
 void Dialog::continuousMode(bool isContinuous)
-{
-    m_bRec->setEnabled(false);
+{    
     m_lCurrentDeviation->setEnabled(true);
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
+        m_bRec->setIcon(QIcon(":/Resources/Play.png"));
     }
 }
 

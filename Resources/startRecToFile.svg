@@ -13,9 +13,9 @@
    height="32"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
-   sodipodi:docname="recToFile.svg"
-   inkscape:export-filename="E:\BulSV\Qt\NGControl\NGControl\Resources\recToFile.png"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="startRecToFile.svg"
+   inkscape:export-filename="C:\Users\Sergey\Documents\PROGRAMMING\Qt\ADCtoCSV\ADCtoCSV\Resources\startRecToFile.png"
    inkscape:export-xdpi="180"
    inkscape:export-ydpi="180">
   <defs
@@ -69,7 +69,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="8.0000004"
-     inkscape:cx="15.762236"
+     inkscape:cx="-8.3002628"
      inkscape:cy="6.1962646"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -89,10 +89,10 @@
      inkscape:snap-page="true"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:window-width="1808"
-     inkscape:window-height="1056"
-     inkscape:window-x="-4"
-     inkscape:window-y="-4"
+     inkscape:window-width="1366"
+     inkscape:window-height="706"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
      inkscape:window-maximized="1" />
   <metadata
      id="metadata7">
@@ -102,7 +102,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -113,13 +113,13 @@
      transform="translate(0,-1020.3622)">
     <path
        sodipodi:type="arc"
-       style="fill:#ff0000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.10003702;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       style="fill:#008000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.10003702;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
        id="path3875"
        sodipodi:cx="20.727066"
        sodipodi:cy="20.288544"
        sodipodi:rx="9.9436884"
        sodipodi:ry="9.9436884"
-       d="m 30.670754,20.288544 a 9.9436884,9.9436884 0 1 1 -19.887376,0 9.9436884,9.9436884 0 1 1 19.887376,0 z"
+       d="m 30.670754,20.288544 a 9.9436884,9.9436884 0 0 1 -9.943688,9.943688 9.9436884,9.9436884 0 0 1 -9.943688,-9.943688 9.9436884,9.9436884 0 0 1 9.943688,-9.943689 9.9436884,9.9436884 0 0 1 9.943688,9.943689 z"
        transform="matrix(0.99962983,0,0,0.99962983,-4.7193935,1016.0812)" />
   </g>
 </svg>

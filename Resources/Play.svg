@@ -14,8 +14,8 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="stopRecToFile.svg"
-   inkscape:export-filename="C:\Users\Sergey\Documents\PROGRAMMING\Qt\ADCtoCSV\ADCtoCSV\Resources\stopRecToFile.png"
+   sodipodi:docname="Play.svg"
+   inkscape:export-filename="C:\Users\Sergey\Documents\PROGRAMMING\Qt\ADCtoCSV\ADCtoCSV\Resources\Play.png"
    inkscape:export-xdpi="180"
    inkscape:export-ydpi="180">
   <defs
@@ -69,7 +69,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="8.0000004"
-     inkscape:cx="-8.3002628"
+     inkscape:cx="-25.237762"
      inkscape:cy="6.1962646"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -111,12 +111,22 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,-1020.3622)">
-    <rect
-       style="fill:#ff0000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.09999999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
-       id="rect3877"
-       width="19.798223"
-       height="19.879293"
-       x="6.1008883"
-       y="1026.4226" />
+    <path
+       sodipodi:type="star"
+       style="fill:#008000;stroke:#000000;stroke-width:0.10000001;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path4148"
+       sodipodi:sides="3"
+       sodipodi:cx="12.666667"
+       sodipodi:cy="1036.3622"
+       sodipodi:r1="13.233333"
+       sodipodi:r2="6.6166668"
+       sodipodi:arg1="0"
+       sodipodi:arg2="1.0471976"
+       inkscape:flatsided="false"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       d="m 25.9,1036.3622 -9.925,5.7302 -9.9249993,5.7302 -5e-7,-11.4604 5e-7,-11.4604 9.9250003,5.7302 z"
+       inkscape:transform-center-x="-3.308333"
+       inkscape:transform-center-y="-1.3069424e-005" />
   </g>
 </svg>
