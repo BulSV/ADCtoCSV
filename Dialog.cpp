@@ -549,6 +549,7 @@ void Dialog::stopRec()
     m_lDeviationAvgName->setText("Average Deviation, mV");
     m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
     // end Calculatin Average Voltage
+
     // Calculating Deviation
     double deviation = 0.0;
     double voltAvg1ms = 0.0;
@@ -732,6 +733,8 @@ void Dialog::discreteChanged(int index)
         m_sbSamplRate->setRange(1, 999);
         break;
     case 1:
+        m_sbSamplRate->setRange(1, 59);
+        break;
     case 2:
         m_sbSamplRate->setRange(1, 60);
         break;
