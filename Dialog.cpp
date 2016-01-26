@@ -512,7 +512,28 @@ void Dialog::fileOutputGenerate()
 
 void Dialog::stopRec()
 {
-    m_TimeVoltDisplay->stop();
+    m_TimeVoltDisplay->stop();    
+    m_TimeDisplay->stop();
+    m_BlinkTimeRec->stop();
+    m_bStopRec->setEnabled(false);
+    m_bRec->setEnabled(true);
+    m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+
+    m_isBright = true;
+
+    m_bSetRate->setEnabled(true);
+    m_leSerialNum->setEnabled(true);
+    m_leModelName->setEnabled(true);
+    m_leTempLoad->setEnabled(true);
+    m_leTempEnv->setEnabled(true);
+    m_leTestName->setEnabled(true);
+
+    m_isRecording = false;
+    m_isWatching = false;
+
+    if(m_VoltList.isEmpty()) {
+        return;
+    }
 
     double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
     // Calculating Average Voltage
@@ -520,8 +541,9 @@ void Dialog::stopRec()
     for(int i = 0; i < m_VoltList.size(); ++i) {
         m_SecondList.push_back(QString::number(i*d_time, 'f'));
         avgVolt += m_VoltList.at(i).toDouble();
-    }
+    }    
     avgVolt /= m_VoltList.size();
+
     m_lVolt->setText(QString::number(avgVolt, 'f', 3));
     m_lVoltAvgName->setText("Average Voltage, V");
     m_lDeviationAvgName->setText("Average Deviation, mV");
@@ -561,24 +583,7 @@ void Dialog::stopRec()
 
     deviation = qSqrt(deviation*samplingRate/(m_VoltList.size()))*1000;
     m_lSamplingRate->setText(QString::number(deviation, 'f', 3));
-    // end Calcualtin Deviation
-    m_TimeDisplay->stop();
-    m_BlinkTimeRec->stop();
-    m_bStopRec->setEnabled(false);
-    m_bRec->setEnabled(true);
-    m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
-
-    m_isBright = true;
-
-    m_bSetRate->setEnabled(true);
-    m_leSerialNum->setEnabled(true);
-    m_leModelName->setEnabled(true);
-    m_leTempLoad->setEnabled(true);
-    m_leTempEnv->setEnabled(true);
-    m_leTestName->setEnabled(true);    
-
-    m_isRecording = false;
-    m_isWatching = false;
+    // end Calcualtin Deviation    
 
     fileOutputGenerate();
 
