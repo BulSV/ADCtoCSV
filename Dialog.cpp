@@ -112,11 +112,11 @@ void Dialog::view()
 
     QGridLayout *voltAvgLayout = new QGridLayout;
     voltAvgLayout->addWidget(m_lVoltAvgName, 0, 0);
-    voltAvgLayout->addWidget(m_lVoltAvg, 0, 2);
-    voltAvgLayout->addWidget(new QLabel("Current Deviation, mV", this), 1, 0);
-    voltAvgLayout->addWidget(m_lCurrentDeviation, 1, 2);
-    voltAvgLayout->addWidget(new QLabel("Deviation per Minute, mV", this), 2, 0);
-    voltAvgLayout->addWidget(m_lDeviationPerMinute, 2, 2);
+    voltAvgLayout->addWidget(m_lVolt, 0, 2);
+    voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
+    voltAvgLayout->addWidget(m_lDeviation, 1, 2);
+    voltAvgLayout->addWidget(new QLabel("Sampling Rate, Hz", this), 2, 0);
+    voltAvgLayout->addWidget(m_lSamplingRate, 2, 2);
     voltAvgLayout->addWidget(new QLabel("Vp-p, mV", this), 3, 0);
     voltAvgLayout->addWidget(m_lVpp, 3, 2);
     voltAvgLayout->setSpacing(5);
@@ -172,14 +172,15 @@ void Dialog::connections()
     connect(m_rbNormal, SIGNAL(clicked(bool)), this, SLOT(normalMode(bool)));
     connect(m_rbContinuous, SIGNAL(clicked(bool)), this, SLOT(continuousMode(bool)));
 
+    connect(m_cbTimeDiscrete, SIGNAL(currentIndexChanged(int)), this, SLOT(discreteChanged(int)));
+
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
 }
 
 void Dialog::toggleTimer(bool isEnabled)
 {
-    if(!m_isRecording) {
-        m_leTimer->setEnabled(isEnabled);
+    if(!m_isRecording) {        
         m_leTimer->setInputMask("00:00:00;O");
     }
 }
@@ -269,7 +270,7 @@ void Dialog::received(bool isReceived)
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
-        if(m_isRecording || m_rbContinuous->isChecked()) {
+        if(m_isRecording || m_isWatching) {
             if(m_CurrentTime->isNull()) {
                 m_CurrentTime->start();
             }
@@ -287,13 +288,13 @@ void Dialog::received(bool isReceived)
                 int samplingRate = static_cast<int>(0.001/d_time)*DISCRETE;
                 // Continuous mode
                 if(m_rbContinuous->isChecked() && m_VoltList.size() >= samplingRate*CALCRANGE) {
-//#ifdef DEBUG
+#ifdef DEBUG
                     qDebug() << "m_VoltList.size()" << m_VoltList.size();
                     qDebug() << "samplingRate*CALCRANGE" << samplingRate*CALCRANGE;
                     qDebug() << "samplingRate" << samplingRate;
                     qDebug() << "m_LastRecieveTime" << m_LastRecieveTime;
                     qDebug() << "d_time" << d_time;
-//#endif
+#endif
                     voltDisplay();
                     // Calculating Average Voltage in 1 ms
                     QVector<double> avgVolt_ms;
@@ -311,29 +312,29 @@ void Dialog::received(bool isReceived)
                         avgVolt += avgVolt_ms.at(i);
                     }
                     avgVolt /= avgVolt_ms.size();
-                    m_lVoltAvg->setText(QString::number(avgVolt, 'f', 3));
+                    m_lVolt->setText(QString::number(avgVolt, 'f', 3));
                     double sigma = 0.0;
                     for(int i = 0; i < avgVolt_ms.size(); ++i) {
                         sigma += qPow(avgVolt - avgVolt_ms.at(i), 2);
                     }
-//#ifdef DEBUG
+#ifdef DEBUG
                     qDebug() << "Current SIGMA" << sigma;
-//#endif
+#endif
                     sigma = qSqrt(sigma/avgVolt_ms.size());
-//#ifdef DEBUG
+#ifdef DEBUG
                     qDebug() << "Current SIGMA" << sigma;
-//#endif
+#endif
                     ++m_SigmaNumber;
                     if(m_SigmaNumber <= SIGMANUMBER && m_SigmaNumber > 1) {
                         m_PrevSigma = qSqrt((qPow(m_PrevSigma, 2)*(m_SigmaNumber - 1) + qPow(sigma, 2))/avgVolt_ms.size());
                     } else if(m_SigmaNumber > SIGMANUMBER){
                         m_SigmaNumber = 0;
-                        m_lDeviationPerMinute->setText(QString::number(m_PrevSigma, 'f', 3));
+                        m_lSamplingRate->setText(QString::number(m_PrevSigma, 'f', 3));
                         m_PrevSigma = 0;
                     } else {
                         m_PrevSigma = sigma;
                     }
-                    m_lCurrentDeviation->setText(QString::number(m_PrevSigma, 'f', 3));
+                    m_lDeviation->setText(QString::number(m_PrevSigma, 'f', 3));
                 }
             }
         }
@@ -369,8 +370,8 @@ void Dialog::record()
         m_VoltList.clear();
 
         m_lVoltAvgName->setText("Voltage, V");
-        m_lVoltAvg->setText("NONE");
-        m_lDeviationPerMinute->setText("NONE");
+        m_lVolt->setText("NONE");
+        m_lSamplingRate->setText("NONE");
         m_lVpp->setText("NONE");
 
         m_PlotVolts.clear();
@@ -430,6 +431,7 @@ void Dialog::setRate()
     if(m_Port->isOpen()) {
         QMultiMap<QString, QString> dataTemp;
         dataTemp.insert("RATE", m_sbSamplRate->text());
+        dataTemp.insert("DISCRT", m_cbTimeDiscrete->currentText());
         m_Protocol->setDataToWrite(dataTemp);
         m_Protocol->writeData();
 
@@ -440,76 +442,8 @@ void Dialog::setRate()
     }
 }
 
-void Dialog::stopRec()
+void Dialog::fileOutputGenerate()
 {
-    m_TimeVoltDisplay->stop();
-
-    double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
-    // Calculating Average Voltage
-    double avgVolt = 0.0;
-    for(int i = 0; i < m_VoltList.size(); ++i) {
-        m_SecondList.push_back(QString::number(i*d_time, 'f'));
-        avgVolt += m_VoltList.at(i).toDouble();
-    }
-    avgVolt /= m_VoltList.size();
-    m_lVoltAvg->setText(QString::number(avgVolt, 'f', 3));
-    m_lVoltAvgName->setText("Average Voltage, V");
-    // end Calculatin Average Voltage
-    // Calculating Deviation
-    double deviation = 0.0;
-    double voltAvg1ms = 0.0;
-    double samplingRate = DISCRETE*d_time;
-    m_sbSamplRate->setValue(samplingRate);
-    int size = 0;
-    try{
-        if(!samplingRate) {
-            throw std::overflow_error("Divide by zerro accured!");
-        }
-        size = m_VoltList.size();
-    } catch(std::overflow_error &e) {
-        QMessageBox::critical(this, "Critical Error", QString(e.what()) + "\nSampling rate must be greater than 1kHz");
-    }
-
-    for(int j = 0; j < size; j = j + samplingRate) {
-        for(int i = 0; i < samplingRate; ++i) {
-            voltAvg1ms += m_VoltList.at(j + i).toDouble();
-        }
-        voltAvg1ms /= samplingRate;
-        deviation += qPow(voltAvg1ms - avgVolt, 2);
-        voltAvg1ms = 0.0;
-    }
-    if(m_VoltList.size() > size) {
-        for(int i = size; i < m_VoltList.size(); ++i) {
-            voltAvg1ms += m_VoltList.at(i).toDouble();
-        }
-        voltAvg1ms /= m_VoltList.size() - size;
-        deviation += qPow(voltAvg1ms - avgVolt, 2);
-    }
-
-    deviation = qSqrt(deviation*samplingRate/(m_VoltList.size()))*1000;
-    m_lDeviationPerMinute->setText(QString::number(deviation, 'f', 3));
-    // end Calcualtin Deviation
-    m_TimeDisplay->stop();
-    m_BlinkTimeRec->stop();
-    m_bStopRec->setEnabled(false);
-    m_bRec->setEnabled(true);
-    m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
-
-    m_isBright = true;
-
-    m_sbSamplRate->setEnabled(true);
-    m_bSetRate->setEnabled(true);
-    m_leSerialNum->setEnabled(true);
-    m_leModelName->setEnabled(true);
-    m_leTempLoad->setEnabled(true);
-    m_leTempEnv->setEnabled(true);
-    m_leTestName->setEnabled(true);
-
-    if(m_chbTimer->isChecked()) {
-        m_leTimer->setEnabled(true);
-    }
-
-    m_isRecording = false;
     /*
     "NUM", "NAME", "LOAD", "ENV", "TEST", "TIME", "RATE", "SEC", "VOLT"
     */
@@ -563,11 +497,81 @@ void Dialog::stopRec()
     if(!m_leTempLoad->text().isEmpty()) {
         fileName += "_" + m_leTempLoad->text();
     }
-    fileName += "_" + m_lDeviationPerMinute->text();
+    fileName += "_" + m_lSamplingRate->text();
     fileName += ".CSV";
 
     DataHandler dataHandler;
     dataHandler.dumpDataToFile(fileName, m_Data);
+}
+
+void Dialog::stopRec()
+{
+    m_TimeVoltDisplay->stop();
+
+    double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
+    // Calculating Average Voltage
+    double avgVolt = 0.0;
+    for(int i = 0; i < m_VoltList.size(); ++i) {
+        m_SecondList.push_back(QString::number(i*d_time, 'f'));
+        avgVolt += m_VoltList.at(i).toDouble();
+    }
+    avgVolt /= m_VoltList.size();
+    m_lVolt->setText(QString::number(avgVolt, 'f', 3));
+    m_lVoltAvgName->setText("Average Voltage, V");
+    // end Calculatin Average Voltage
+    // Calculating Deviation
+    double deviation = 0.0;
+    double voltAvg1ms = 0.0;
+    double samplingRate = DISCRETE*d_time;
+    m_sbSamplRate->setValue(samplingRate);
+    int size = 0;
+    try{
+        if(!samplingRate) {
+            throw std::overflow_error("Divide by zerro accured!");
+        }
+        size = m_VoltList.size();
+    } catch(std::overflow_error &e) {
+        QMessageBox::critical(this, "Critical Error", QString(e.what()) + "\nSampling rate must be greater than 1kHz");
+    }
+
+    for(int j = 0; j < size; j = j + samplingRate) {
+        for(int i = 0; i < samplingRate; ++i) {
+            voltAvg1ms += m_VoltList.at(j + i).toDouble();
+        }
+        voltAvg1ms /= samplingRate;
+        deviation += qPow(voltAvg1ms - avgVolt, 2);
+        voltAvg1ms = 0.0;
+    }
+    if(m_VoltList.size() > size) {
+        for(int i = size; i < m_VoltList.size(); ++i) {
+            voltAvg1ms += m_VoltList.at(i).toDouble();
+        }
+        voltAvg1ms /= m_VoltList.size() - size;
+        deviation += qPow(voltAvg1ms - avgVolt, 2);
+    }
+
+    deviation = qSqrt(deviation*samplingRate/(m_VoltList.size()))*1000;
+    m_lSamplingRate->setText(QString::number(deviation, 'f', 3));
+    // end Calcualtin Deviation
+    m_TimeDisplay->stop();
+    m_BlinkTimeRec->stop();
+    m_bStopRec->setEnabled(false);
+    m_bRec->setEnabled(true);
+    m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+
+    m_isBright = true;
+
+    m_bSetRate->setEnabled(true);
+    m_leSerialNum->setEnabled(true);
+    m_leModelName->setEnabled(true);
+    m_leTempLoad->setEnabled(true);
+    m_leTempEnv->setEnabled(true);
+    m_leTestName->setEnabled(true);    
+
+    m_isRecording = false;
+    m_isWatching = false;
+
+    fileOutputGenerate();
 
     m_SecondList.clear();
     m_VoltList.clear();
@@ -658,7 +662,7 @@ void Dialog::timeDisplay()
 
 void Dialog::voltDisplay()
 {
-    m_lVoltAvg->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
+    m_lVolt->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
     m_PlotVolts.push_back(m_VoltList.last().toDouble());
     m_PlotTime.push_back(m_LastRecieveTime);
@@ -682,19 +686,37 @@ void Dialog::voltDisplay()
 
 void Dialog::normalMode(bool isNormal)
 {
-    if(!m_bStart->isEnabled()) {        
+    if(!m_bStart->isEnabled()) {
+        m_bStop->setEnabled(true);
         m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
-    }
-    m_lCurrentDeviation->setEnabled(false);
+        m_isRecording = true;
+        m_isWatching = false;
+    }    
     m_SigmaNumber = 0;
 }
 
 void Dialog::continuousMode(bool isContinuous)
-{    
-    m_lCurrentDeviation->setEnabled(true);
+{
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
         m_bRec->setIcon(QIcon(":/Resources/Play.png"));
+        m_isRecording = false;
+        m_isWatching = true;
+    }
+}
+
+void Dialog::discreteChanged(int index)
+{
+    switch (index) {
+    case 0:
+        m_sbSamplRate->setRange(1, 999);
+        break;
+    case 1:
+    case 2:
+        m_sbSamplRate->setRange(1, 60);
+        break;
+    default:
+        break;
     }
 }
 
@@ -730,11 +752,12 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_LastRecieveTime(0.0)
     , m_isBright(true)
     , m_isRecording(false)
+    , m_isWatching(false)
     , m_BlinkTimeRec(new QTimer(this))
     , m_TimeDisplay(new QTimer(this))
-    , m_lVoltAvg(new QLabel("NONE", this))
-    , m_lCurrentDeviation(new QLabel("NONE", this))
-    , m_lDeviationPerMinute(new QLabel("NONE", this))
+    , m_lVolt(new QLabel("NONE", this))
+    , m_lDeviation(new QLabel("NONE", this))
+    , m_lSamplingRate(new QLabel("NONE", this))
     , m_lVpp(new QLabel("NONE", this))
     , m_TimeVoltDisplay(new QTimer(this))
     , m_plot(new QwtPlot(this))
@@ -756,6 +779,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     timeDiscretes << "ms" << "s" << "min";
     m_cbTimeDiscrete->addItems(timeDiscretes);
 
+    m_sbSamplRate->setRange(1, 999);
+
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_leTimer->setAlignment(Qt::AlignCenter);
@@ -775,10 +800,9 @@ Dialog::Dialog(QString title, QWidget *parent)
     m_leTimer->setInputMask("00:00:00;O");
 
     m_lTickTime->setFont(font);
-    m_lVoltAvg->setFont(font);
-    m_lCurrentDeviation->setFont(font);
-    m_lCurrentDeviation->setEnabled(false);
-    m_lDeviationPerMinute->setFont(font);
+    m_lVolt->setFont(font);
+    m_lDeviation->setFont(font);
+    m_lSamplingRate->setFont(font);
     m_lVpp->setFont(font);
 
     QStringList portsNames;
@@ -796,7 +820,6 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     m_rbNormal->setChecked(true);
 
-    m_leTimer->setEnabled(false);
     m_bStop->setEnabled(false);
     m_bStopRec->setEnabled(false);
     m_bSetRate->setEnabled(false);
@@ -831,7 +854,6 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     // Plot
     QwtPlotCanvas *canvas = new QwtPlotCanvas();
-//    canvas->setBorderRadius(200);
     canvas->setFrameShadow(QwtPlotCanvas::Plain);
     canvas->setFrameStyle(QwtPlotCanvas::StyledPanel);
 

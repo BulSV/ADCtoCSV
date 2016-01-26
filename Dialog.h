@@ -61,13 +61,14 @@ class Dialog : public QWidget
 
     bool m_isBright;
     bool m_isRecording;
+    bool m_isWatching;
     QTimer *m_BlinkTimeRec;
 
     QTimer *m_TimeDisplay;
 
-    QLabel *m_lVoltAvg;
-    QLabel *m_lCurrentDeviation;
-    QLabel *m_lDeviationPerMinute;
+    QLabel *m_lVolt;
+    QLabel *m_lDeviation;
+    QLabel *m_lSamplingRate;
     QLabel *m_lVpp;
     QTimer *m_TimeVoltDisplay;
 
@@ -93,6 +94,8 @@ class Dialog : public QWidget
     void timeCountUp();
     void timeCountdown();
     void setTime(int sec, int minute, int hour);
+    void fileOutputGenerate();
+
 private slots:
     void toggleTimer(bool isEnabled);
     void stop();
@@ -110,6 +113,7 @@ private slots:
     void voltDisplay();
     void normalMode(bool isNormal);
     void continuousMode(bool isContinuous);
+    void discreteChanged(int index);
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();
