@@ -38,8 +38,8 @@
 
 #define VOLTFACTOR 5.174*2.2/4096.0 // V
 
-#define MINVOLT 1000.0 // V
-#define MAXVOLT -1000.0 // V
+#define MINVOLT 0.0 // V
+#define MAXVOLT 0.0 // V
 
 const double DISCRETE = 1.0;  // Accumulation Time, ms
 
@@ -275,6 +275,10 @@ void Dialog::received(bool isReceived)
                 m_CurrentTime->start();
             }
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
+            if(!m_minVoltage && !m_maxVoltage) {
+                m_minVoltage = currentVoltage;
+                m_maxVoltage = currentVoltage;
+            }
             if(m_maxVoltage < currentVoltage) {
                 m_maxVoltage = currentVoltage;
             }
@@ -662,9 +666,15 @@ void Dialog::timeDisplay()
 
 void Dialog::voltDisplay()
 {
-    m_lVolt->setText(QString::number(m_VoltList.last().toDouble(), 'f', 3));
+    double currentVolt = 0.0;
+    if(!m_VoltList.isEmpty()) {
+        currentVolt = m_VoltList.last().toDouble();
+    } else {
+        return;
+    }
+    m_lVolt->setText(QString::number(currentVolt, 'f', 3));
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
-    m_PlotVolts.push_back(m_VoltList.last().toDouble());
+    m_PlotVolts.push_back(currentVolt);
     m_PlotTime.push_back(m_LastRecieveTime);
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
         m_PrevTime += 10.0;
