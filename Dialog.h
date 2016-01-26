@@ -85,6 +85,8 @@ class Dialog : public QWidget
     QRadioButton *m_rbContinuous;
 
     QLabel *m_lVoltAvgName;
+    QLabel *m_lDeviationAvgName;
+    QLabel *m_lSamplingRateAvgName;
 
     double m_PrevSigma;
     int m_SigmaNumber;

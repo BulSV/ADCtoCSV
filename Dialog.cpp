@@ -113,9 +113,9 @@ void Dialog::view()
     QGridLayout *voltAvgLayout = new QGridLayout;
     voltAvgLayout->addWidget(m_lVoltAvgName, 0, 0);
     voltAvgLayout->addWidget(m_lVolt, 0, 2);
-    voltAvgLayout->addWidget(new QLabel("Deviation, mV", this), 1, 0);
+    voltAvgLayout->addWidget(m_lDeviationAvgName, 1, 0);
     voltAvgLayout->addWidget(m_lDeviation, 1, 2);
-    voltAvgLayout->addWidget(new QLabel("Sampling Rate, Hz", this), 2, 0);
+    voltAvgLayout->addWidget(m_lSamplingRateAvgName, 2, 0);
     voltAvgLayout->addWidget(m_lSamplingRate, 2, 2);
     voltAvgLayout->addWidget(new QLabel("Vp-p, mV", this), 3, 0);
     voltAvgLayout->addWidget(m_lVpp, 3, 2);
@@ -374,6 +374,8 @@ void Dialog::record()
         m_VoltList.clear();
 
         m_lVoltAvgName->setText("Voltage, V");
+        m_lDeviationAvgName->setText("Deviation, mV");
+        m_lSamplingRateAvgName->setText("Sampling Rate, Hz");
         m_lVolt->setText("NONE");
         m_lSamplingRate->setText("NONE");
         m_lVpp->setText("NONE");
@@ -522,6 +524,8 @@ void Dialog::stopRec()
     avgVolt /= m_VoltList.size();
     m_lVolt->setText(QString::number(avgVolt, 'f', 3));
     m_lVoltAvgName->setText("Average Voltage, V");
+    m_lDeviationAvgName->setText("Average Deviation, mV");
+    m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
     // end Calculatin Average Voltage
     // Calculating Deviation
     double deviation = 0.0;
@@ -535,7 +539,8 @@ void Dialog::stopRec()
         }
         size = m_VoltList.size();
     } catch(std::overflow_error &e) {
-        QMessageBox::critical(this, "Critical Error", QString(e.what()) + "\nSampling rate must be greater than 1kHz");
+        QMessageBox::critical(this, "Critical Error", QString(e.what())
+                              + "\nSampling rate must be greater than 1kHz");
     }
 
     for(int j = 0; j < size; j = j + samplingRate) {
@@ -778,6 +783,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_rbNormal(new QRadioButton("Normal", this))
     , m_rbContinuous(new QRadioButton("Continuous", this))
     , m_lVoltAvgName(new QLabel("Voltage, V", this))
+    , m_lDeviationAvgName(new QLabel("Deviation, mV", this))
+    , m_lSamplingRateAvgName(new QLabel("Sampling Rate, Hz", this))
     , m_PrevSigma(0.0)
     , m_SigmaNumber(0)
 {
