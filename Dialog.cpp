@@ -81,12 +81,11 @@ void Dialog::view()
     playButtonsLayout->setSpacing(5);
 
     QGridLayout *controlLayout = new QGridLayout;
-    controlLayout->addWidget(new QLabel("Samples in", this), 0, 0);
-    controlLayout->addWidget(m_cbTimeDiscrete, 0, 1);
-    controlLayout->addWidget(m_sbSamplRate, 0, 2);
-    controlLayout->addWidget(m_bSetRate, 1, 0, 1, 3);
-    controlLayout->addWidget(gbMeasureTime, 2, 0, 3, 3);
-    controlLayout->addItem(playButtonsLayout, 5, 0, 1, 3);
+    controlLayout->addWidget(new QLabel("Samples Rate, Hz", this), 0, 0);
+    controlLayout->addWidget(m_sbSamplRate, 0, 1);
+    controlLayout->addWidget(m_bSetRate, 1, 0, 1, 2);
+    controlLayout->addWidget(gbMeasureTime, 2, 0, 3, 2);
+    controlLayout->addItem(playButtonsLayout, 5, 0, 1, 2);
     controlLayout->setSpacing(5);
 
     QGridLayout *infoLayout = new QGridLayout;
@@ -170,9 +169,7 @@ void Dialog::connections()
     connect(m_TimeVoltDisplay, SIGNAL(timeout()), this, SLOT(voltDisplay()));
 
     connect(m_rbNormal, SIGNAL(clicked(bool)), this, SLOT(normalMode(bool)));
-    connect(m_rbContinuous, SIGNAL(clicked(bool)), this, SLOT(continuousMode(bool)));
-
-    connect(m_cbTimeDiscrete, SIGNAL(currentIndexChanged(int)), this, SLOT(discreteChanged(int)));
+    connect(m_rbContinuous, SIGNAL(clicked(bool)), this, SLOT(continuousMode(bool)));    
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -180,8 +177,9 @@ void Dialog::connections()
 
 void Dialog::toggleTimer(bool isEnabled)
 {
-    if(!m_isRecording) {        
-        m_leTimer->setInputMask("00:00:00;O");
+    if(!m_isRecording) {
+        m_leTimer->setEnabled(isEnabled);
+        m_leTimer->setInputMask("00:00:00;#");
     }
 }
 
@@ -220,6 +218,12 @@ void Dialog::stop()
     if(m_isRecording) {
         stopRec();
     }
+    if(m_rbNormal->isChecked()) {
+        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+    } else {
+        m_bRec->setIcon(QIcon(":/Resources/Play.png"));
+    }
+
     m_bRec->setEnabled(false);
 }
 
@@ -254,6 +258,12 @@ void Dialog::start()
         m_cbBaud->setEnabled(false);
         m_lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
         m_lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
+
+        if(m_rbNormal->isChecked()) {
+            m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+        } else {
+            m_bRec->setIcon(QIcon(":/Resources/Play.png"));
+        }
     }
     else
     {
@@ -288,10 +298,10 @@ void Dialog::received(bool isReceived)
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
             if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 1.0) {
                 m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
-                double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
-                int samplingRate = static_cast<int>(0.001/d_time)*DISCRETE;
+                double d_time = m_LastRecieveTime/m_VoltList.size();
+                double samplingRate = 1/d_time;
                 // Continuous mode
-                if(m_rbContinuous->isChecked() && m_VoltList.size() >= samplingRate*CALCRANGE) {
+                if(m_isWatching && m_VoltList.size() >= samplingRate*CALCRANGE) {
 #ifdef DEBUG
                     qDebug() << "m_VoltList.size()" << m_VoltList.size();
                     qDebug() << "samplingRate*CALCRANGE" << samplingRate*CALCRANGE;
@@ -358,7 +368,11 @@ void Dialog::record()
         m_bRec->setEnabled(false);
         m_bStopRec->setEnabled(true);
 
-        m_isRecording = true;
+        if(m_rbNormal->isChecked()) {
+            m_isRecording = true;
+        } else {
+            m_isWatching = true;
+        }
 
         if(m_chbTimer->isChecked()) {
             m_leTimer->setEnabled(false);
@@ -366,10 +380,18 @@ void Dialog::record()
         }
 
         if(!m_BlinkTimeRec->isActive()) {
-            m_bRec->setIcon(QIcon(":/Resources/startRecToFileBlink.png"));
+            if(m_isRecording) {
+                m_bRec->setIcon(QIcon(":/Resources/startRecToFileBlink.png"));
+            } else {
+                m_bRec->setIcon(QIcon(":/Resources/PlayBlink.png"));
+            }
             m_isBright = false;
             m_BlinkTimeRec->start();
         }
+
+        m_rbNormal->setEnabled(false);
+        m_rbContinuous->setEnabled(false);
+
         m_SecondList.clear();
         m_VoltList.clear();
 
@@ -425,10 +447,18 @@ void Dialog::blinkRecButton()
 {
     if(m_isBright) {
         m_isBright = false;
-        m_bRec->setIcon(QIcon(":/Resources/startRecToFileBlink.png"));
+        if(m_isRecording) {
+            m_bRec->setIcon(QIcon(":/Resources/startRecToFileBlink.png"));
+        } else {
+            m_bRec->setIcon(QIcon(":/Resources/PlayBlink.png"));
+        }
     } else {
         m_isBright = true;
-        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+        if(m_isRecording) {
+            m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+        } else {
+            m_bRec->setIcon(QIcon(":/Resources/Play.png"));
+        }
     }
 }
 
@@ -437,7 +467,6 @@ void Dialog::setRate()
     if(m_Port->isOpen()) {
         QMultiMap<QString, QString> dataTemp;
         dataTemp.insert("RATE", m_sbSamplRate->text());
-        dataTemp.insert("DISCRT", m_cbTimeDiscrete->currentText());
         m_Protocol->setDataToWrite(dataTemp);
         m_Protocol->writeData();
 
@@ -517,7 +546,16 @@ void Dialog::stopRec()
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
     m_bRec->setEnabled(true);
-    m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+    if(m_chbTimer->isChecked()) {
+        m_leTimer->setEnabled(true);
+    }
+    if(m_isRecording) {
+        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+    } else {
+        m_bRec->setIcon(QIcon(":/Resources/Play.png"));
+    }
+    m_rbNormal->setEnabled(true);
+    m_rbContinuous->setEnabled(true);
 
     m_isBright = true;
 
@@ -535,7 +573,7 @@ void Dialog::stopRec()
         return;
     }
 
-    double d_time = m_LastRecieveTime/(m_VoltList.size() - 1);
+    double d_time = m_LastRecieveTime/m_VoltList.size();
     // Calculating Average Voltage
     double avgVolt = 0.0;
     for(int i = 0; i < m_VoltList.size(); ++i) {
@@ -553,8 +591,8 @@ void Dialog::stopRec()
     // Calculating Deviation
     double deviation = 0.0;
     double voltAvg1ms = 0.0;
-    double samplingRate = DISCRETE*d_time;
-    m_sbSamplRate->setValue(samplingRate);
+    double samplingRate = DISCRETE/d_time;
+    m_lSamplingRate->setText(QString::number(samplingRate, 'f', 3));
     int size = 0;
     try{
         if(!samplingRate) {
@@ -726,23 +764,6 @@ void Dialog::continuousMode(bool isContinuous)
     }
 }
 
-void Dialog::discreteChanged(int index)
-{
-    switch (index) {
-    case 0:
-        m_sbSamplRate->setRange(1, 999);
-        break;
-    case 1:
-        m_sbSamplRate->setRange(1, 59);
-        break;
-    case 2:
-        m_sbSamplRate->setRange(1, 60);
-        break;
-    default:
-        break;
-    }
-}
-
 Dialog::Dialog(QString title, QWidget *parent)
     : QWidget(parent, Qt::WindowCloseButtonHint)
     , m_cbPort(new QComboBox(this))
@@ -754,8 +775,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_chbTimer(new QCheckBox("Timer", this))
     , m_leTimer(new QLineEdit(this))
     , m_lTickTime(new QLabel("00:00:00", this))
-    , m_bRec(new QPushButton(QIcon(":/Resources/startRecToFile.png"), QString::null, this))
-    , m_cbTimeDiscrete(new QComboBox(this))
+    , m_bRec(new QPushButton(QIcon(":/Resources/startRecToFile.png"), QString::null, this))   
     , m_sbSamplRate(new QSpinBox(this))
     , m_bSetRate(new QPushButton("Set Rate", this))
     , m_bStopRec(new QPushButton(QIcon(":/Resources/stopRecToFile.png"), QString::null, this))
@@ -798,17 +818,14 @@ Dialog::Dialog(QString title, QWidget *parent)
 {
     setWindowTitle(title);
     view();
-    connections();
+    connections();    
 
-    QStringList timeDiscretes;
-    timeDiscretes << "ms" << "s" << "min";
-    m_cbTimeDiscrete->addItems(timeDiscretes);
-
-    m_sbSamplRate->setRange(1, 999);
+    m_sbSamplRate->setRange(1, 115200);
 
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_leTimer->setAlignment(Qt::AlignCenter);
+    m_leTimer->setEnabled(false);
     QDesktopWidget desktop;
     QFont font("Consolas");
 
@@ -822,7 +839,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     QRegExp regExpr("[0-5][0-9]:[0-5][0-9]:[0-5][0-9]");
     QRegExpValidator *validator = new QRegExpValidator(regExpr, this);
     m_leTimer->setValidator(validator);
-    m_leTimer->setInputMask("00:00:00;O");
+    m_leTimer->setInputMask("00:00:00;#");
 
     m_lTickTime->setFont(font);
     m_lVolt->setFont(font);

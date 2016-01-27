@@ -8,7 +8,7 @@ INCLUDEPATH += $${QWT_LOCATION}/include/
 
 TEMPLATE = app
 win32:RC_FILE = ADCtoCSV.rc
-CONFIG += console
+#CONFIG += console
 CONFIG(debug, debug|release) {
     LIBS += -L$${QWT_LOCATION}/lib/ -lqwtd
 

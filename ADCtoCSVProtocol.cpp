@@ -53,16 +53,7 @@ void ADCtoCSVProtocol::writeData()
 {
     QByteArray ba;
 
-    ba.append(STARTBYTE);    
-    if(itsWriteData.value("DISCRT") == "ms") {
-        ba.append(0b00000001);
-    } else if(itsWriteData.value("DISCRT") == "s") {
-        ba.append(0b00000010);
-    } else if(itsWriteData.value("DISCRT") == "min") {
-        ba.append(0b00000100);
-    } else {
-        ba.append('\0');
-    }
+    ba.append(STARTBYTE);
     ba.append(intToByteArray(itsWriteData.value("RATE").toInt(), 3));
     ba.append(STOPBYTE);
 

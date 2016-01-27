@@ -33,8 +33,7 @@ class Dialog : public QWidget
     QCheckBox *m_chbTimer;
     QLineEdit *m_leTimer;
     QLabel *m_lTickTime;
-    QPushButton *m_bRec;
-    QComboBox *m_cbTimeDiscrete;
+    QPushButton *m_bRec;    
     QSpinBox *m_sbSamplRate;
     QPushButton *m_bSetRate;
     QPushButton *m_bStopRec;
@@ -114,8 +113,7 @@ private slots:
     void timeDisplay();
     void voltDisplay();
     void normalMode(bool isNormal);
-    void continuousMode(bool isContinuous);
-    void discreteChanged(int index);
+    void continuousMode(bool isContinuous);    
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();

@@ -12,5 +12,7 @@
         <file>Resources/ADCtoCSV.svg</file>
         <file>Resources/Play.svg</file>
         <file>Resources/Play.png</file>
+        <file>Resources/PlayBlink.svg</file>
+        <file>Resources/PlayBlink.png</file>
     </qresource>
 </RCC>
