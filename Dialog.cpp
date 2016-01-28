@@ -41,12 +41,6 @@
 #define MINVOLT 0.0 // V
 #define MAXVOLT 0.0 // V
 
-const double DISCRETE = 1.0;  // Accumulation Time, ms
-
-const int CALCRANGE = 1000; // Calculation range for continuous mode, ms
-
-const int SIGMANUMBER = 60; // Number of deviations in 1 minute
-
 void Dialog::view()
 {
     QGridLayout *portLayout = new QGridLayout;
@@ -332,6 +326,14 @@ void Dialog::received(bool isReceived)
 void Dialog::record()
 {
     if(m_Port->isOpen()) {
+        if(m_rbNormal->isChecked()) {
+            m_isRecording = true;
+            m_isWatching = false;
+        } else {
+            m_isRecording = false;
+            m_isWatching = true;
+        }
+
         m_leSerialNum->setEnabled(false);
         m_leModelName->setEnabled(false);
         m_leTempLoad->setEnabled(false);
@@ -341,12 +343,6 @@ void Dialog::record()
         m_bSetRate->setEnabled(false);
         m_bRec->setEnabled(false);
         m_bStopRec->setEnabled(true);
-
-        if(m_rbNormal->isChecked()) {
-            m_isRecording = true;
-        } else {
-            m_isWatching = true;
-        }
 
         if(m_chbTimer->isChecked()) {
             m_leTimer->setEnabled(false);
@@ -373,15 +369,26 @@ void Dialog::record()
         m_lDeviationAvgName->setText("Deviation, mV");
         m_lSamplingRateAvgName->setText("Sampling Rate, Hz");
         m_lVolt->setText("NONE");
-        m_lSamplingRate->setText("NONE");
+        m_lDeviation->setText("NONE");
         m_lVpp->setText("NONE");
+        m_lSamplingRate->setText("NONE");
 
         m_PlotVolts.clear();
         m_PlotTime.clear();
-        m_PrevTime = 0.0;
+
+        m_LastRecieveTime = 0;
+        m_oldVoltSum = 0;
+        m_currVoltSum = 0;
+        m_oldDeviationSum = 0;
+        m_currDeviation = 0;
+        m_oldVoltNumSum = 0;
+        m_currVoltNum = 0;
+        m_oldTimeIntervalSum = 0;
+        m_currTimeInterval = 0;
+        m_PrevTime = 0;
         m_plot->setAxisScale( QwtPlot::xBottom,
-                              static_cast<int>(m_PrevTime),
-                              60 + static_cast<int>(m_PrevTime),
+                              0,
+                              60,
                               10 );
 
         m_maxVoltage = MAXVOLT;
@@ -564,7 +571,7 @@ void Dialog::stopRec()
     fileOutputGenerate();
 
     m_SecondList.clear();
-    m_VoltList.clear();
+    m_VoltList.clear();    
 }
 
 void Dialog::setTime(int sec, int minute, int hour)
@@ -662,20 +669,19 @@ void Dialog::voltsPloting()
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
     m_PlotVolts.push_back(currentVolt);
     m_PlotTime.push_back(m_LastRecieveTime);
+
     if(m_LastRecieveTime - m_PrevTime > 60.0) {
-        m_PrevTime += 10.0;
-    }
-    if(m_LastRecieveTime > 60.0) {
-        m_PlotVolts.removeFirst();
-        m_PlotTime.removeFirst();
-    }
-    m_Curve->setSamples(m_PlotTime, m_PlotVolts);
-    if(m_LastRecieveTime - m_PrevTime >= 10.0) {
+        m_PrevTime += 10;
         m_plot->setAxisScale( QwtPlot::xBottom,
                               static_cast<int>(m_PrevTime),
                               60 + static_cast<int>(m_PrevTime),
                               10 );
+        m_PlotVolts.removeFirst();
+        m_PlotTime.removeFirst();
     }
+
+    m_Curve->setSamples(m_PlotTime, m_PlotVolts);
+
     m_plot->replot();
     qApp->processEvents();
 }
@@ -684,20 +690,15 @@ void Dialog::normalMode(bool isNormal)
 {
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
-        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
-        m_isRecording = true;
-        m_isWatching = false;
-    }    
-    m_SigmaNumber = 0;
+        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));        
+    }
 }
 
 void Dialog::continuousMode(bool isContinuous)
 {
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
-        m_bRec->setIcon(QIcon(":/Resources/Play.png"));
-        m_isRecording = false;
-        m_isWatching = true;
+        m_bRec->setIcon(QIcon(":/Resources/Play.png"));        
     }
 }
 
