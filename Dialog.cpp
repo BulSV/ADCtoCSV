@@ -538,65 +538,28 @@ void Dialog::stopRec()
     m_leModelName->setEnabled(true);
     m_leTempLoad->setEnabled(true);
     m_leTempEnv->setEnabled(true);
-    m_leTestName->setEnabled(true);
+    m_leTestName->setEnabled(true);    
 
+    if(m_VoltList.isEmpty() || m_isWatching) {
+        m_isRecording = false;
+        m_isWatching = false;
+        return;
+    }
     m_isRecording = false;
     m_isWatching = false;
 
-    if(m_VoltList.isEmpty()) {
-        return;
-    }
-
-    double d_time = m_LastRecieveTime/m_VoltList.size();
     // Calculating Average Voltage
-    double avgVolt = 0.0;
-    for(int i = 0; i < m_VoltList.size(); ++i) {
-        m_SecondList.push_back(QString::number(i*d_time, 'f'));
-        avgVolt += m_VoltList.at(i).toDouble();
-    }    
-    avgVolt /= m_VoltList.size();
-
-    m_lVolt->setText(QString::number(avgVolt, 'f', 3));
     m_lVoltAvgName->setText("Average Voltage, V");
-    m_lDeviationAvgName->setText("Average Deviation, mV");
-    m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
+    m_lVolt->setText(QString::number(m_oldVoltSum/m_oldVoltNumSum, 'f', 3));
     // end Calculatin Average Voltage
 
     // Calculating Deviation
-    double deviation = 0.0;
-    double voltAvg1ms = 0.0;
-    double samplingRate = DISCRETE/d_time;
-    m_lSamplingRate->setText(QString::number(samplingRate, 'f', 3));
-    int size = 0;
-    try{
-        if(!samplingRate) {
-            throw std::overflow_error("Divide by zerro accured!");
-        }
-        size = m_VoltList.size();
-    } catch(std::overflow_error &e) {
-        QMessageBox::critical(this, "Critical Error", QString(e.what())
-                              + "\nSampling rate must be greater than 1kHz");
-    }
+    m_lDeviationAvgName->setText("Average Deviation, mV");
+    m_lDeviation->setText(QString::number(m_oldDeviationSum, 'f', 3));
 
-    for(int j = 0; j < size; j = j + samplingRate) {
-        for(int i = 0; i < samplingRate; ++i) {
-            voltAvg1ms += m_VoltList.at(j + i).toDouble();
-        }
-        voltAvg1ms /= samplingRate;
-        deviation += qPow(voltAvg1ms - avgVolt, 2);
-        voltAvg1ms = 0.0;
-    }
-    if(m_VoltList.size() > size) {
-        for(int i = size; i < m_VoltList.size(); ++i) {
-            voltAvg1ms += m_VoltList.at(i).toDouble();
-        }
-        voltAvg1ms /= m_VoltList.size() - size;
-        deviation += qPow(voltAvg1ms - avgVolt, 2);
-    }
-
-    deviation = qSqrt(deviation*samplingRate/(m_VoltList.size()))*1000;
-    m_lSamplingRate->setText(QString::number(deviation, 'f', 3));
-    // end Calcualtin Deviation    
+    // Calculating Sampling Rate
+    m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
+    m_lSamplingRate->setText(QString::number(m_oldVoltNumSum/m_oldTimeIntervalSum, 'f', 3));
 
     fileOutputGenerate();
 
