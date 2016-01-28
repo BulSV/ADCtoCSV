@@ -12,91 +12,96 @@ ComPort::ComPort(QSerialPort *port,
                  int stopByte,
                  int packetLenght,
                  bool isMaster,
-                 qint64 bufferSize,
+                 int bufferTime_ms,
                  QObject *parent)
-    : QObject(parent),
-      itsPort(port),
-      itsStartByte(startByte),
-      itsStopByte(stopByte),
-      itsPacketLenght(packetLenght),
-      m_counter(0),
-      m_isDataWritten(true),
-      m_isMaster(isMaster),
-      m_bufferSize(bufferSize)
-{
-    itsReadData.clear();
-    itsPort->setReadBufferSize(m_bufferSize); // for reading m_bufferSize bytes at the time
+    : QObject(parent)
+    , m_port(port)
+    , m_startByte(startByte)
+    , m_stopByte(stopByte)
+    , m_packetLenght(packetLenght)
+    , m_counter(0)
+    , m_isDataWritten(true)
+    , m_isMaster(isMaster)
+    , m_readBufferTimer(new QTimer(this))
+{   
+    m_port->setReadBufferSize(1); // for reading 1 bytes at the time
+    m_readBufferTimer->setInterval(bufferTime_ms);
 
-    connect(itsPort, SIGNAL(readyRead()), this, SLOT(readData()));
+    connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
+    connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(readData()));
 }
 
 void ComPort::readData()
-{
-    if(itsPort->openMode() != QSerialPort::WriteOnly) {
-        QByteArray buffer;
+{    
+    m_readBufferTimer->stop();
+    QByteArray buffer;
+    buffer = m_bufferData;
+    m_bufferData.clear();
 
-        if(itsPort->bytesAvailable() > 0) {
-            buffer.append(itsPort->read(m_bufferSize));
-            while (buffer.size()) {
-                if(!m_counter && buffer.at(0) == static_cast<char>(itsStartByte)) {
-                    itsReadData.append(buffer);
-                    ++m_counter;
-                } else if(m_counter && m_counter < itsPacketLenght) {
-                    itsReadData.append(buffer);
-                    ++m_counter;
+    while (buffer.size()) {
+        if(!m_counter && buffer.at(0) == static_cast<char>(m_startByte)) {
+            m_readData.append(buffer);
+            ++m_counter;
+        } else if(m_counter && m_counter < m_packetLenght) {
+            m_readData.append(buffer);
+            ++m_counter;
 
-                    if((m_counter == itsPacketLenght)
-                            && (itsReadData.at(itsPacketLenght - 1) == static_cast<char>(itsStopByte))) {
-#ifdef DEBUG1
-                        qDebug() << itsReadData.toHex();
-#endif
-                        emit DataIsReaded(true);
-                        emit ReadedData(itsReadData);
+            if((m_counter == m_packetLenght)
+                    && (m_readData.at(m_packetLenght - 1) == static_cast<char>(m_stopByte))) {
+                emit DataIsReaded(true);
+                emit ReadedData(m_readData);
 
-                        if(!m_isMaster && !m_isDataWritten) {
-                            privateWriteData();
-                        }
-
-                        itsReadData.clear();
-                        m_counter = 0;
-                    }
-                } else {
-#ifdef DEBUG1
-                    qDebug() << "Reading failure!";
-#endif
-                    emit DataIsReaded(false);
-
-                    itsReadData.clear();
-                    m_counter = 0;
+                if(!m_isMaster && !m_isDataWritten) {
+                    privateWriteData();
                 }
-                buffer.remove(0, 1);
+
+                m_readData.clear();
+                m_counter = 0;
             }
+        } else {
+            emit DataIsReaded(false);
+
+            m_readData.clear();
+            m_counter = 0;
+        }
+        buffer.remove(0, 1);
+    }
+}
+
+void ComPort::bufferData()
+{
+    if(m_port->openMode() != QSerialPort::WriteOnly) {
+        if(!m_readBufferTimer->isActive()) {
+            m_readBufferTimer->start();
+        }
+        if(m_port->bytesAvailable() > 0) {
+            m_bufferData.append(m_port->read(1));
         }
     }
 }
 
 QByteArray ComPort::getReadData() const
 {
-    return itsReadData;
+    return m_readData;
 }
 
 void ComPort::setWriteData(const QByteArray &data)
 {
-    itsWriteData = data;
+    m_writeData = data;
     m_isDataWritten = false;
 }
 
 QByteArray ComPort::getWriteData() const
 {
-    return itsWriteData;
+    return m_writeData;
 }
 
 void ComPort::privateWriteData()
 {
-    if( itsPort->openMode() != QSerialPort::ReadOnly && itsPort->isOpen() ) {
-        itsPort->write(itsWriteData);
+    if( m_port->openMode() != QSerialPort::ReadOnly && m_port->isOpen() ) {
+        m_port->write(m_writeData);
         emit DataIsWrited(true);
-        emit WritedData(itsWriteData);
+        emit WritedData(m_writeData);
         m_isDataWritten = true;
     }
 }

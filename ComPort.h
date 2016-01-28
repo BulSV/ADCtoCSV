@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QtSerialPort/QSerialPort>
 #include <QByteArray>
+#include <QTimer>
 
 class ComPort: public QObject
 {
@@ -14,7 +15,7 @@ public:
             int stopByte = 0xAA,
             int packetLenght = 8,
             bool isMaster = true,
-            qint64 bufferSize = 1,
+            int bufferTime_ms = 1000,
             QObject *parent = 0);
     QByteArray getReadData() const;
     void setWriteData(const QByteArray &data);
@@ -28,21 +29,23 @@ signals:
     void WritedData(QByteArray);
 private slots:
     void readData();
+    void bufferData();
 private:
-    QSerialPort *itsPort;
+    QSerialPort *m_port;
 
-    QByteArray itsReadData;
-    QByteArray itsWriteData;
+    QByteArray m_readData;
+    QByteArray m_writeData;
+    QByteArray m_bufferData;
 
-    int itsStartByte;
-    int itsStopByte;
-    int itsPacketLenght;
+    int m_startByte;
+    int m_stopByte;
+    int m_packetLenght;
     int m_counter;
 
     bool m_isDataWritten;
     bool m_isMaster;
 
-    qint64 m_bufferSize;
+    QTimer *m_readBufferTimer;
 
     void privateWriteData();
 };
