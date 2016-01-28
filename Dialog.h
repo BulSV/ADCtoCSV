@@ -90,6 +90,15 @@ class Dialog : public QWidget
     double m_PrevSigma;
     int m_SigmaNumber;
 
+    double m_oldVoltSum;
+    double m_currVoltSum;
+    double m_oldDeviationSum;
+    double m_currDeviation;
+    double m_oldVoltNumSum;
+    double m_currVoltNum;
+    double m_oldTimeIntervalSum;
+    double m_currTimeInterval;
+
     void view();
     void connections();
     void timeCountUp();
@@ -111,7 +120,7 @@ private slots:
     void setRate();
     void stopRec();
     void timeDisplay();
-    void voltDisplay();
+    void voltsPloting();
     void normalMode(bool isNormal);
     void continuousMode(bool isContinuous);    
 public:

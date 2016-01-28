@@ -166,7 +166,7 @@ void Dialog::connections()
     connect(m_bSetRate, SIGNAL(clicked()), this, SLOT(setRate()));
 
     connect(m_TimeDisplay, SIGNAL(timeout()), this, SLOT(timeDisplay()));
-    connect(m_TimeVoltDisplay, SIGNAL(timeout()), this, SLOT(voltDisplay()));
+    connect(m_TimeVoltDisplay, SIGNAL(timeout()), this, SLOT(voltsPloting()));
 
     connect(m_rbNormal, SIGNAL(clicked(bool)), this, SLOT(normalMode(bool)));
     connect(m_rbContinuous, SIGNAL(clicked(bool)), this, SLOT(continuousMode(bool)));    
@@ -280,10 +280,11 @@ void Dialog::received(bool isReceived)
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
+        if(m_CurrentTime->isNull()) {
+            m_CurrentTime->start();
+        }
+
         if(m_isRecording || m_isWatching) {
-            if(m_CurrentTime->isNull()) {
-                m_CurrentTime->start();
-            }
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt()*VOLTFACTOR;
             if(!m_minVoltage && !m_maxVoltage) {
                 m_minVoltage = currentVoltage;
@@ -295,61 +296,34 @@ void Dialog::received(bool isReceived)
             if(m_minVoltage > currentVoltage) {
                 m_minVoltage = currentVoltage;
             }
+
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
             if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 1.0) {
+                // Calculating Sampling Rate
                 m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
-                double d_time = m_LastRecieveTime/m_VoltList.size();
-                double samplingRate = 1/d_time;
-                // Continuous mode
-                if(m_isWatching && m_VoltList.size() >= samplingRate*CALCRANGE) {
-#ifdef DEBUG
-                    qDebug() << "m_VoltList.size()" << m_VoltList.size();
-                    qDebug() << "samplingRate*CALCRANGE" << samplingRate*CALCRANGE;
-                    qDebug() << "samplingRate" << samplingRate;
-                    qDebug() << "m_LastRecieveTime" << m_LastRecieveTime;
-                    qDebug() << "d_time" << d_time;
-#endif
-                    voltDisplay();
-                    // Calculating Average Voltage in 1 ms
-                    QVector<double> avgVolt_ms;
-                    double volt_ms = 0.0;
-                    for(int i = 1; i < m_VoltList.size() + 1; ++i) {
-                        volt_ms += m_VoltList.at(i - 1).toDouble();
-                        if(!(i % (samplingRate + 1))) {
-                            avgVolt_ms.push_back(volt_ms/samplingRate);
-                            volt_ms = 0.0;
-                        }
-                    }
-                    // Calculating Average Voltage
-                    double avgVolt = 0.0;
-                    for(int i = 0; i < avgVolt_ms.size(); ++i) {
-                        avgVolt += avgVolt_ms.at(i);
-                    }
-                    avgVolt /= avgVolt_ms.size();
-                    m_lVolt->setText(QString::number(avgVolt, 'f', 3));
-                    double sigma = 0.0;
-                    for(int i = 0; i < avgVolt_ms.size(); ++i) {
-                        sigma += qPow(avgVolt - avgVolt_ms.at(i), 2);
-                    }
-#ifdef DEBUG
-                    qDebug() << "Current SIGMA" << sigma;
-#endif
-                    sigma = qSqrt(sigma/avgVolt_ms.size());
-#ifdef DEBUG
-                    qDebug() << "Current SIGMA" << sigma;
-#endif
-                    ++m_SigmaNumber;
-                    if(m_SigmaNumber <= SIGMANUMBER && m_SigmaNumber > 1) {
-                        m_PrevSigma = qSqrt((qPow(m_PrevSigma, 2)*(m_SigmaNumber - 1) + qPow(sigma, 2))/avgVolt_ms.size());
-                    } else if(m_SigmaNumber > SIGMANUMBER){
-                        m_SigmaNumber = 0;
-                        m_lSamplingRate->setText(QString::number(m_PrevSigma, 'f', 3));
-                        m_PrevSigma = 0;
-                    } else {
-                        m_PrevSigma = sigma;
-                    }
-                    m_lDeviation->setText(QString::number(m_PrevSigma, 'f', 3));
+                m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
+                m_oldTimeIntervalSum += m_currTimeInterval;
+                m_currVoltNum = m_VoltList.size() - m_oldVoltNumSum;
+                m_oldVoltNumSum += m_currVoltNum;
+                m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 3));
+
+                // Calculating Average Voltage
+                for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
+                    m_currVoltSum += m_VoltList.at(i).toDouble();
                 }
+                m_oldVoltSum += m_currVoltSum;
+                m_lVolt->setText(QString::number(m_currVoltSum/m_currVoltNum, 'f', 3));
+
+                // Calculating Deviation
+                for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
+                    m_currDeviation += qPow(m_currVoltSum - m_VoltList.at(i).toDouble(), 2);
+                }
+                m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
+                m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
+                                            + m_currVoltNum*qPow(m_currDeviation, 2)) / m_oldVoltSum);
+                m_lDeviation->setText(QString::number(m_currDeviation, 'f', 3));
+
+                voltsPloting();
             }
         }
     }
@@ -713,7 +687,7 @@ void Dialog::timeDisplay()
     }
 }
 
-void Dialog::voltDisplay()
+void Dialog::voltsPloting()
 {
     double currentVolt = 0.0;
     if(!m_VoltList.isEmpty()) {
@@ -815,6 +789,14 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lSamplingRateAvgName(new QLabel("Sampling Rate, Hz", this))
     , m_PrevSigma(0.0)
     , m_SigmaNumber(0)
+    , m_oldVoltSum(0)
+    , m_currVoltSum(0)
+    , m_oldDeviationSum(0)
+    , m_currDeviation(0)
+    , m_oldVoltNumSum(0)
+    , m_currVoltNum(0)
+    , m_oldTimeIntervalSum(0)
+    , m_currTimeInterval(0)
 {
     setWindowTitle(title);
     view();
