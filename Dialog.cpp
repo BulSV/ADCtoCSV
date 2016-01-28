@@ -487,7 +487,7 @@ void Dialog::fileOutputGenerate()
     m_Data.insert("ENV", dataList);
     dataList.clear();
 
-    dataList.push_back(m_sbSamplRate->text());
+    dataList.push_back(QString::number(m_lSamplingRate->text().toDouble()/1000, 'f'));
     m_Data.insert("RATE", dataList);
     dataList.clear();
 
@@ -577,6 +577,11 @@ void Dialog::stopRec()
     // Calculating Sampling Rate
     m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
     m_lSamplingRate->setText(QString::number(m_oldVoltNumSum/m_oldTimeIntervalSum, 'f', 3));
+
+    // Filling seconds array
+    for(int i = 0; i < m_oldVoltNumSum; ++i) {
+        m_SecondList.append(QString::number(i*m_oldTimeIntervalSum/m_oldVoltNumSum, 'f'));
+    }
 
     fileOutputGenerate();
 
@@ -760,9 +765,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_rbContinuous(new QRadioButton("Continuous", this))
     , m_lVoltAvgName(new QLabel("Voltage, V", this))
     , m_lDeviationAvgName(new QLabel("Deviation, mV", this))
-    , m_lSamplingRateAvgName(new QLabel("Sampling Rate, Hz", this))
-    , m_PrevSigma(0.0)
-    , m_SigmaNumber(0)
+    , m_lSamplingRateAvgName(new QLabel("Sampling Rate, Hz", this))    
     , m_oldVoltSum(0)
     , m_currVoltSum(0)
     , m_oldDeviationSum(0)

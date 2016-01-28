@@ -85,10 +85,7 @@ class Dialog : public QWidget
 
     QLabel *m_lVoltAvgName;
     QLabel *m_lDeviationAvgName;
-    QLabel *m_lSamplingRateAvgName;
-
-    double m_PrevSigma;
-    int m_SigmaNumber;
+    QLabel *m_lSamplingRateAvgName;    
 
     double m_oldVoltSum;
     double m_currVoltSum;
