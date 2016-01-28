@@ -41,13 +41,10 @@ void ADCtoCSVProtocol::readData(bool isReaded)
 
         ba = itsComPort->getReadData();
 
-#ifdef DEBUG
-        qDebug() << ba.toHex().toUpper();
-#endif
-
-        itsReadData.insert(QString("VOLT"), QString::number(wordToInt(ba.mid(1, 2))));
-
-        emit DataIsReaded(true);
+        for(int i = 0; i < ba.size(); i = i + 4) {
+            itsReadData.insert(QString("VOLT"), QString::number(wordToInt(ba.mid(i + 1, i + 2))));
+            emit DataIsReaded(true);
+        }
     } else {
         emit DataIsReaded(false);
     }

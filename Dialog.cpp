@@ -1,6 +1,6 @@
-//#ifdef DEBUG
+#ifdef DEBUG
 #include <QDebug>
-//#endif
+#endif
 
 #include "Dialog.h"
 #include <QGridLayout>
@@ -209,7 +209,7 @@ void Dialog::stop()
     }
 
     m_bStopRec->setEnabled(false);
-    if(m_isRecording) {
+    if(m_isRecording || m_isWatching) {
         stopRec();
     }
     if(m_rbNormal->isChecked()) {
@@ -310,7 +310,7 @@ void Dialog::received(bool isReceived)
 
                 // Calculating Deviation
                 for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
-                    m_currDeviation += qPow(m_currVoltSum - m_VoltList.at(i).toDouble(), 2);
+                    m_currDeviation += qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2);
                 }
                 m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
                 m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
@@ -386,6 +386,7 @@ void Dialog::record()
         m_oldTimeIntervalSum = 0;
         m_currTimeInterval = 0;
         m_PrevTime = 0;
+
         m_plot->setAxisScale( QwtPlot::xBottom,
                               0,
                               60,

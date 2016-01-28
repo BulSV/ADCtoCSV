@@ -40,10 +40,10 @@ void ComPort::readData()
 
     while (buffer.size()) {
         if(!m_counter && buffer.at(0) == static_cast<char>(m_startByte)) {
-            m_readData.append(buffer);
+            m_readData.append(buffer.at(0));
             ++m_counter;
         } else if(m_counter && m_counter < m_packetLenght) {
-            m_readData.append(buffer);
+            m_readData.append(buffer.at(0));
             ++m_counter;
 
             if((m_counter == m_packetLenght)
