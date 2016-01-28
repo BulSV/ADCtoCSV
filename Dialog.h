@@ -105,6 +105,7 @@ class Dialog : public QWidget
     void timeCountdown();
     void setTime(int sec, int minute, int hour);
     void fileOutputGenerate();
+    double round(double value, int precision);
 
 private slots:
     void toggleTimer(bool isEnabled);

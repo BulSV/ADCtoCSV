@@ -302,6 +302,7 @@ void Dialog::received(bool isReceived)
                 m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 3));
 
                 // Calculating Average Voltage
+                m_currVoltSum = 0;
                 for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
                     m_currVoltSum += m_VoltList.at(i).toDouble();
                 }
@@ -310,7 +311,7 @@ void Dialog::received(bool isReceived)
 
                 // Calculating Deviation
                 for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
-                    m_currDeviation += qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2);
+                    m_currDeviation += round(qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2), 3);
                 }
                 m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
                 m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
@@ -519,6 +520,14 @@ void Dialog::fileOutputGenerate()
 
     DataHandler dataHandler;
     dataHandler.dumpDataToFile(fileName, m_Data);
+}
+
+double Dialog::round(double value, int precision)
+{
+    value = static_cast<int>(value * qPow(10, precision));
+    value = value / qPow(10, precision);
+
+    return value;
 }
 
 void Dialog::stopRec()
