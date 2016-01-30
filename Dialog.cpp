@@ -699,6 +699,11 @@ void Dialog::voltsPloting()
         m_PlotTime.removeFirst();
     }
 
+    if(m_isRecording) {
+        m_Curve->setPen(Qt::red);
+    } else {
+        m_Curve->setPen(Qt::blue);
+    }
     m_Curve->setSamples(m_PlotTime, m_PlotVolts);
 
     m_plot->replot();
