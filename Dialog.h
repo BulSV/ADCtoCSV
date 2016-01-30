@@ -96,6 +96,11 @@ class Dialog : public QWidget
     double m_oldTimeIntervalSum;
     double m_currTimeInterval;
 
+    bool m_ctrlWasPressed;
+    double m_yAxisMin;
+    double m_yAxisMax;
+    double m_yAxisStep;
+
     void view();
     void connections();
     void timeCountUp();
@@ -120,7 +125,9 @@ private slots:
     void timeDisplay();
     void voltsPloting();
     void normalMode(bool isNormal);
-    void continuousMode(bool isContinuous);    
+    void continuousMode(bool isContinuous);
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
 public:
     explicit Dialog(QString title, QWidget *parent = 0);
     ~Dialog();

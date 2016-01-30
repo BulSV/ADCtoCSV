@@ -19,6 +19,7 @@
 #include <QMessageBox>
 #include <QDesktopWidget>
 #include <QGroupBox>
+#include <QWheelEvent>
 
 #include "DataHandler.h"
 
@@ -40,6 +41,11 @@
 
 #define MINVOLT 0.0 // V
 #define MAXVOLT 0.0 // V
+
+#define MAXYVALUE 12 // V
+#define MINYVALUE 0 // V
+#define YSCALESTEP 2
+#define MINYSCALEDVALUE 0.001 // V
 
 void Dialog::view()
 {
@@ -726,6 +732,77 @@ void Dialog::continuousMode(bool isContinuous)
     }
 }
 
+bool Dialog::eventFilter(QObject *obj, QEvent *event)
+{
+    if( event->type() == QEvent::KeyPress && ( obj == this ) ) {
+        if(static_cast<QKeyEvent *>(event)->key() == Qt::Key_Control) {
+            m_ctrlWasPressed = true;
+        }
+
+        return true;
+    }
+
+    if( event->type() == QEvent::KeyRelease && ( obj == this ) ) {
+        if(static_cast<QKeyEvent *>(event)->key() == Qt::Key_Control) {
+            m_ctrlWasPressed = false;
+        }
+
+        return true;
+    }
+
+    // Move Y axis
+    if( event->type() == QEvent::Wheel && ( obj == m_plot )  && !m_ctrlWasPressed ) {
+        // Move up
+        if( dynamic_cast<QWheelEvent *>(event)->angleDelta().ry() > 0 ) {
+            if(m_yAxisMax + m_yAxisStep <= MAXYVALUE) {
+                m_yAxisMin += m_yAxisStep;
+                m_yAxisMax += m_yAxisStep;
+            }
+        } else {
+            // Move down
+            if(m_yAxisMin - m_yAxisStep >= MINYVALUE) {
+                m_yAxisMin -= m_yAxisStep;
+                m_yAxisMax -= m_yAxisStep;
+            }
+        }
+        dynamic_cast<QwtPlot *>(obj)->setAxisScale( QwtPlot::yLeft,
+                                                    m_yAxisMin,
+                                                    m_yAxisMax,
+                                                    m_yAxisStep );
+        m_plot->replot();
+
+        return true;
+    }
+
+    // Change scale Y axis (with ctrl modifier)
+    if( event->type() == QEvent::Wheel && ( obj == m_plot ) && m_ctrlWasPressed ) {
+        // Scale up
+        if( dynamic_cast<QWheelEvent *>(event)->angleDelta().ry() > 0 ) {
+            if(m_yAxisMax * YSCALESTEP <= MAXYVALUE) {
+                m_yAxisMin *= YSCALESTEP;
+                m_yAxisMax *= YSCALESTEP;
+                m_yAxisStep *= YSCALESTEP;
+            }
+        } else {
+            // Scale down
+            if( m_yAxisStep / YSCALESTEP >= MINYSCALEDVALUE ) {
+                m_yAxisMin /= YSCALESTEP;
+                m_yAxisMax /= YSCALESTEP;
+                m_yAxisStep /= YSCALESTEP;
+            }
+        }
+        dynamic_cast<QwtPlot *>(obj)->setAxisScale( QwtPlot::yLeft,
+                                                    m_yAxisMin,
+                                                    m_yAxisMax,
+                                                    m_yAxisStep );
+        m_plot->replot();
+
+        return true;
+    }
+
+    return QWidget::eventFilter(obj, event);
+}
+
 Dialog::Dialog(QString title, QWidget *parent)
     : QWidget(parent, Qt::WindowCloseButtonHint)
     , m_cbPort(new QComboBox(this))
@@ -783,10 +860,16 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_currVoltNum(0)
     , m_oldTimeIntervalSum(0)
     , m_currTimeInterval(0)
+    , m_ctrlWasPressed(false)
+    , m_yAxisMin(0)
+    , m_yAxisMax(2.5)
+    , m_yAxisStep(0.25)
 {
     setWindowTitle(title);
     view();
-    connections();    
+    connections();
+
+    qApp->installEventFilter(this);
 
     m_sbSamplRate->setRange(1, 115200);
 
@@ -896,9 +979,9 @@ Dialog::Dialog(QString title, QWidget *parent)
     voltTitle.setFont(QFont("Verdana", 10));
     m_plot->setAxisTitle( QwtPlot::yLeft, voltTitle );
     m_plot->setAxisScale( QwtPlot::yLeft,
-                          0,
-                          2.5,
-                          0.25 );
+                          m_yAxisMin,
+                          m_yAxisMax,
+                          m_yAxisStep );
     m_plot->setAxisMaxMajor( QwtPlot::yLeft, 10 );
     m_plot->setAxisMaxMinor( QwtPlot::yLeft, 10 );
     m_plot->setAxisAutoScale( QwtPlot::yLeft, false );
