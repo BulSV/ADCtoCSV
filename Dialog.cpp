@@ -45,7 +45,7 @@
 #define MAXYVALUE 12 // V
 #define MINYVALUE 0 // V
 #define YSCALESTEP 2
-#define MINYSCALEDVALUE 0.001 // V
+#define MINYSCALEDVALUE 0.0625 // V
 
 void Dialog::view()
 {
@@ -705,6 +705,22 @@ void Dialog::voltsPloting()
         m_PlotTime.removeFirst();
     }
 
+    if(currentVolt > m_yAxisMax && m_yAxisMax + m_yAxisStep <= MAXYVALUE) {
+        m_yAxisMax += m_yAxisStep;
+        m_yAxisMin += m_yAxisStep;
+        m_plot->setAxisScale( QwtPlot::yLeft,
+                              m_yAxisMin,
+                              m_yAxisMax,
+                              m_yAxisStep );
+    } else if(currentVolt < m_yAxisMin && m_yAxisMin - m_yAxisStep >= MINYVALUE) {
+        m_yAxisMax -= m_yAxisStep;
+        m_yAxisMin -= m_yAxisStep;
+        m_plot->setAxisScale( QwtPlot::yLeft,
+                              m_yAxisMin,
+                              m_yAxisMax,
+                              m_yAxisStep );
+    }
+
     if(m_isRecording) {
         m_Curve->setPen(Qt::red);
     } else {
@@ -966,6 +982,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     QwtText timeTitle("Time, sec");
     timeTitle.setFont(QFont("Verdana", 10));
     m_plot->setAxisTitle( QwtPlot::xBottom, timeTitle );
+    m_plot->setAxisFont(QwtPlot::xBottom, QFont("Verdana", 8));
     m_plot->setAxisScale( QwtPlot::xBottom,
                           0,
                           60,
@@ -978,6 +995,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     QwtText voltTitle("Voltage, V");
     voltTitle.setFont(QFont("Verdana", 10));
     m_plot->setAxisTitle( QwtPlot::yLeft, voltTitle );
+    m_plot->setAxisFont(QwtPlot::yLeft, QFont("Verdana", 8));
     m_plot->setAxisScale( QwtPlot::yLeft,
                           m_yAxisMin,
                           m_yAxisMax,
