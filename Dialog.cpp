@@ -349,8 +349,7 @@ void Dialog::record()
         m_bStopRec->setEnabled(true);
 
         if(m_chbTimer->isChecked()) {
-            m_leTimer->setEnabled(false);
-            m_bStopRec->setEnabled(false);
+            m_leTimer->setEnabled(false);            
         }
 
         if(!m_BlinkTimeRec->isActive()) {
@@ -670,7 +669,7 @@ void Dialog::timeCountdown()
 
 void Dialog::timeDisplay()
 {
-    if(m_chbTimer->isChecked()) {
+    if(m_chbTimer->isChecked() && m_isRecording) {
         timeCountdown();
     } else {
         timeCountUp();
