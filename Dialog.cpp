@@ -259,11 +259,13 @@ void Dialog::start()
             m_bRec->setIcon(QIcon(":/Resources/Play.png"));
         }
     }
-    else
+
+    m_ComPort->resetBufferSize();
+    /*else
     {
         m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
         m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
-    }
+    }*/
 }
 
 void Dialog::received(bool isReceived)
@@ -452,6 +454,8 @@ void Dialog::setRate()
         dataTemp.insert("RATE", m_sbSamplRate->text());
         m_Protocol->setDataToWrite(dataTemp);
         m_Protocol->writeData();
+
+        m_ComPort->resetBufferSize();
 
         if(!m_BlinkTimeTxColor->isActive() && !m_BlinkTimeTxNone->isActive()) {
             m_BlinkTimeTxColor->start();

@@ -15,9 +15,10 @@ object_script.*
 
 # Binary files
 *.exe
-NGControl!/
-NGControlPro
-NGControlProd
+Thumbs.db
+ADCtoCSV!/
+ADCtoCSVPro
+ADCtoCSVProd
 
 # Don't needed CodeBlocks files
 *.depend

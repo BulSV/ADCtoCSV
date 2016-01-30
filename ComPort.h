@@ -20,6 +20,7 @@ public:
     QByteArray getReadData() const;
     void setWriteData(const QByteArray &data);
     QByteArray getWriteData() const;
+    void resetBufferSize();
 public slots:
     void writeData();
 signals:
@@ -41,6 +42,7 @@ private:
     int m_stopByte;
     int m_packetLenght;
     int m_counter;
+    int m_bufferSize;
 
     bool m_isDataWritten;
     bool m_isMaster;

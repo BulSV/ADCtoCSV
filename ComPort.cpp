@@ -20,11 +20,12 @@ ComPort::ComPort(QSerialPort *port,
     , m_stopByte(stopByte)
     , m_packetLenght(packetLenght)
     , m_counter(0)
+    , m_bufferSize(1)
     , m_isDataWritten(true)
     , m_isMaster(isMaster)
     , m_readBufferTimer(new QTimer(this))
 {   
-    m_port->setReadBufferSize(1); // for reading 1 bytes at the time
+    m_port->setReadBufferSize(m_bufferSize); // for reading 1 bytes at the time
     m_readBufferTimer->setInterval(bufferTime_ms);
 
     connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
@@ -34,6 +35,12 @@ ComPort::ComPort(QSerialPort *port,
 void ComPort::readData()
 {    
     m_readBufferTimer->stop();
+    if(m_bufferSize == 1) {
+        m_bufferSize = m_bufferData.size();
+        m_bufferData.clear();
+        m_port->setReadBufferSize(m_bufferSize);
+        return;
+    }
     QByteArray buffer;
     buffer = m_bufferData;
     m_bufferData.clear();
@@ -75,7 +82,7 @@ void ComPort::bufferData()
             m_readBufferTimer->start();
         }
         if(m_port->bytesAvailable() > 0) {
-            m_bufferData.append(m_port->read(1));
+            m_bufferData.append(m_port->read(m_bufferSize));
         }
     }
 }
@@ -94,6 +101,12 @@ void ComPort::setWriteData(const QByteArray &data)
 QByteArray ComPort::getWriteData() const
 {
     return m_writeData;
+}
+
+void ComPort::resetBufferSize()
+{
+    m_bufferSize = 1;
+    m_port->setReadBufferSize(m_bufferSize);
 }
 
 void ComPort::privateWriteData()
