@@ -20,6 +20,7 @@
 #include <QDesktopWidget>
 #include <QGroupBox>
 #include <QWheelEvent>
+#include <QtMath>
 
 #include "DataHandler.h"
 
@@ -705,16 +706,18 @@ void Dialog::voltsPloting()
         m_PlotTime.removeFirst();
     }
 
-    if(currentVolt > m_yAxisMax && m_yAxisMax + m_yAxisStep <= MAXYVALUE) {
-        m_yAxisMax += m_yAxisStep;
-        m_yAxisMin += m_yAxisStep;
+    double multiplicityUp = qCeil((currentVolt - m_yAxisMax)/m_yAxisStep);
+    double multiplicityDown = qCeil((m_yAxisMin - currentVolt)/m_yAxisStep);
+    if(currentVolt > m_yAxisMax && m_yAxisMax + multiplicityUp * m_yAxisStep <= MAXYVALUE) {
+        m_yAxisMax += multiplicityUp * m_yAxisStep;
+        m_yAxisMin += multiplicityUp * m_yAxisStep;
         m_plot->setAxisScale( QwtPlot::yLeft,
                               m_yAxisMin,
                               m_yAxisMax,
                               m_yAxisStep );
-    } else if(currentVolt < m_yAxisMin && m_yAxisMin - m_yAxisStep >= MINYVALUE) {
-        m_yAxisMax -= m_yAxisStep;
-        m_yAxisMin -= m_yAxisStep;
+    } else if(currentVolt < m_yAxisMin && m_yAxisMin - multiplicityDown * m_yAxisStep >= MINYVALUE) {
+        m_yAxisMax -= multiplicityDown * m_yAxisStep;
+        m_yAxisMin -= multiplicityDown * m_yAxisStep;
         m_plot->setAxisScale( QwtPlot::yLeft,
                               m_yAxisMin,
                               m_yAxisMax,
