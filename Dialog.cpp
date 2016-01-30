@@ -863,7 +863,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_ctrlWasPressed(false)
     , m_yAxisMin(0)
     , m_yAxisMax(2.5)
-    , m_yAxisStep(0.25)
+    , m_yAxisStep(0.5)
 {
     setWindowTitle(title);
     view();
@@ -970,8 +970,8 @@ Dialog::Dialog(QString title, QWidget *parent)
                           0,
                           60,
                           10 );
-    m_plot->setAxisMaxMajor( QwtPlot::xBottom, 1 );
-    m_plot->setAxisMaxMinor( QwtPlot::xBottom, 2 );
+    m_plot->setAxisMaxMajor( QwtPlot::xBottom, 6 );
+    m_plot->setAxisMaxMinor( QwtPlot::xBottom, 5 );
     m_plot->setAxisAutoScale( QwtPlot::xBottom, false );
 
     // Voltage Left
@@ -982,7 +982,7 @@ Dialog::Dialog(QString title, QWidget *parent)
                           m_yAxisMin,
                           m_yAxisMax,
                           m_yAxisStep );
-    m_plot->setAxisMaxMajor( QwtPlot::yLeft, 10 );
+    m_plot->setAxisMaxMajor( QwtPlot::yLeft, 5 );
     m_plot->setAxisMaxMinor( QwtPlot::yLeft, 10 );
     m_plot->setAxisAutoScale( QwtPlot::yLeft, false );
 
