@@ -25,8 +25,8 @@ ComPort::ComPort(QSerialPort *port,
     , m_isMaster(isMaster)
     , m_readBufferTimer(new QTimer(this))
 {   
-    m_port->setReadBufferSize(m_bufferSize); // for reading 1 bytes at the time
-    m_readBufferTimer->setInterval(bufferTime_ms);
+    m_port->setReadBufferSize(m_bufferSize); // for reading m_bufferSize bytes at the time
+    m_readBufferTimer->setInterval(bufferTime_ms); // timer that determined buffer size by time
 
     connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
     connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(readData()));

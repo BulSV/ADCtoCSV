@@ -178,12 +178,13 @@ void Dialog::toggleTimer(bool isEnabled)
 }
 
 void Dialog::stop()
-{
+{    
     m_Port->close();
     m_BlinkTimeTxNone->stop();
     m_BlinkTimeTxColor->stop();
     m_BlinkTimeRxNone->stop();
     m_BlinkTimeRxColor->stop();
+
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
@@ -270,7 +271,7 @@ void Dialog::start()
 
 void Dialog::received(bool isReceived)
 {
-    if(isReceived) {
+    if(isReceived && m_bStop->isEnabled()) {
         if(!m_BlinkTimeRxColor->isActive() && !m_BlinkTimeRxNone->isActive()) {
             m_BlinkTimeRxColor->start();
             m_lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
@@ -323,7 +324,7 @@ void Dialog::received(bool isReceived)
                 voltsPloting();
             }
         }
-    }
+    }    
 }
 
 void Dialog::record()
@@ -412,12 +413,12 @@ void Dialog::colorIsRx()
 }
 
 void Dialog::colorRxNone()
-{
+{    
     m_BlinkTimeRxNone->stop();
 }
 
 void Dialog::colorIsTx()
-{
+{    
     m_lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
     m_BlinkTimeTxColor->stop();
     m_BlinkTimeTxNone->start();
