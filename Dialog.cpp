@@ -43,7 +43,7 @@
 #define MINVOLT 0.0 // V
 #define MAXVOLT 0.0 // V
 
-#define MAXYVALUE 12 // V
+#define MAXYVALUE 24 // V
 #define MINYVALUE 0 // V
 #define YSCALESTEP 2
 #define MINYSCALEDVALUE 0.0625 // V
@@ -541,6 +541,62 @@ double Dialog::round(double value, int precision)
     return value;
 }
 
+QwtScaleDiv Dialog::newYAxisScale(int majorTicks, int minorTicks)
+{
+    double majorStep = 0;
+    double mediumStep = 0;
+    double minorStep = 0;
+
+    QList<double> major;
+    QList<double> medium;
+    QList<double> minor;
+
+    if((m_yAxisMax - m_yAxisMin) / m_yAxisStep < majorTicks) {
+        majorStep = m_yAxisStep;
+    } else {
+        majorStep = (m_yAxisMax - m_yAxisMin) / majorTicks;
+    }
+    mediumStep = majorStep / 2;
+    minorStep = majorStep / minorTicks;
+
+    for(double i = m_yAxisMin; i <= m_yAxisMax; i += majorStep) {
+        major.append(i);
+    }
+    for(double i = m_yAxisMin; i <= m_yAxisMax; i += mediumStep) {
+        medium.append(i);
+    }
+    for(double i = m_yAxisMin; i <= m_yAxisMax; i += minorStep) {
+        minor.append(i);
+    }
+
+    for(int i = 0; i < major.size(); ++i) {
+        for(int j = 0; j < medium.size(); ++j) {
+            if(qFuzzyCompare(medium.at(j), major.at(i))) {
+                medium.removeAt(j);
+            }
+        }
+        for(int j = 0; j < minor.size(); ++j) {
+            if(qFuzzyCompare(minor.at(j), major.at(i))) {
+                minor.removeAt(j);
+            }
+        }
+    }
+    for(int i = 0; i < medium.size(); ++i) {
+        for(int j = 0; j < minor.size(); ++j) {
+            if(qFuzzyCompare(minor.at(j), medium.at(i))) {
+                minor.removeAt(j);
+            }
+        }
+    }
+
+    QList<double> ticks[3];
+    ticks[2] = major;
+    ticks[1] = medium;
+    ticks[0] = minor;
+
+    return QwtScaleDiv(m_yAxisMin, m_yAxisMax, ticks);
+}
+
 void Dialog::stopRec()
 {
     m_TimeVoltDisplay->stop();    
@@ -810,6 +866,7 @@ bool Dialog::eventFilter(QObject *obj, QEvent *event)
                 m_yAxisStep /= YSCALESTEP;
             }
         }
+//        dynamic_cast<QwtPlot *>(obj)->setAxisScaleDiv(QwtPlot::yLeft, newYAxisScale(5, 10));
         dynamic_cast<QwtPlot *>(obj)->setAxisScale( QwtPlot::yLeft,
                                                     m_yAxisMin,
                                                     m_yAxisMax,
@@ -881,8 +938,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_currTimeInterval(0)
     , m_ctrlWasPressed(false)
     , m_yAxisMin(0)
-    , m_yAxisMax(2.5)
-    , m_yAxisStep(0.5)
+    , m_yAxisMax(5)
+    , m_yAxisStep(1)
 {
     setWindowTitle(title);
     view();

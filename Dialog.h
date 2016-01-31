@@ -109,6 +109,8 @@ class Dialog : public QWidget
     void fileOutputGenerate();
     double round(double value, int precision);
 
+    QwtScaleDiv newYAxisScale(int majorTicks, int minorTicks);
+
 private slots:
     void toggleTimer(bool isEnabled);
     void stop();
