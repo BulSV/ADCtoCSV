@@ -27,7 +27,7 @@
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
 #define BYTESLENGTH 4  // bytes
-#define BUFFERTIME 1000  // ms
+#define BUFFERTIME 125  // ms
 
 #define BLINKTIMETX 200 // ms
 #define BLINKTIMERX 500 // ms
@@ -124,7 +124,7 @@ void Dialog::view()
     QGridLayout *graphLayout = new QGridLayout;
     graphLayout->addWidget(m_plot);
     graphLayout->setSpacing(5);
-    m_plot->setMaximumSize(350, 350);
+    m_plot->setMaximumSize(450, 450);
 
     QGridLayout *allLayouts = new QGridLayout;
     allLayouts->addItem(portLayout, 0, 0);
@@ -302,33 +302,63 @@ void Dialog::received(bool isReceived)
             }
 
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
-            if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 1.0) {
-                // Calculating Sampling Rate
-                m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
-                m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
-                m_oldTimeIntervalSum += m_currTimeInterval;
-                m_currVoltNum = m_VoltList.size() - m_oldVoltNumSum;
-                m_oldVoltNumSum += m_currVoltNum;
-                m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 3));
+            if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 0.5) {
+                if(m_isWatching) {
+                    // Calculating Sampling Rate
+                    m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
+                    m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
+                    m_oldTimeIntervalSum += m_currTimeInterval;
+                    m_currVoltNum = m_VoltList.size();
+                    m_oldVoltNumSum += m_currVoltNum;
+                    m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 0));
 
-                // Calculating Average Voltage
-                m_currVoltSum = 0;
-                for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
-                    m_currVoltSum += m_VoltList.at(i).toDouble();
+                    // Calculating Average Voltage
+                    m_currVoltSum = 0;
+                    for(int i = 0; i < m_currVoltNum; ++i) {
+                        m_currVoltSum += m_VoltList.at(i).toDouble();
+                    }
+                    m_oldVoltSum += m_currVoltSum;
+                    m_lVolt->setText(QString::number(m_currVoltSum/m_currVoltNum, 'f', 3));
+
+                    // Calculating Deviation
+                    for(int i = 0; i < m_currVoltNum; ++i) {
+                        m_currDeviation += round(qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2), 6);
+                    }
+                    m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
+                    m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
+                                                + m_currVoltNum*qPow(m_currDeviation, 2)) / m_oldVoltNumSum);
+                    m_lDeviation->setText(QString::number(m_currDeviation, 'f', 3));
+
+                    voltsPloting();
+                    m_VoltList.clear();
+                } else {
+                    // Calculating Sampling Rate
+                    m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
+                    m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
+                    m_oldTimeIntervalSum += m_currTimeInterval;
+                    m_currVoltNum = m_VoltList.size() - m_oldVoltNumSum;
+                    m_oldVoltNumSum += m_currVoltNum;
+                    m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 0));
+
+                    // Calculating Average Voltage
+                    m_currVoltSum = 0;
+                    for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
+                        m_currVoltSum += m_VoltList.at(i).toDouble();
+                    }
+                    m_oldVoltSum += m_currVoltSum;
+                    m_lVolt->setText(QString::number(m_currVoltSum/m_currVoltNum, 'f', 3));
+
+                    // Calculating Deviation
+                    for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
+                        m_currDeviation += round(qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2), 6);
+                    }
+                    m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
+                    m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
+                                                + m_currVoltNum*qPow(m_currDeviation, 2)) / m_oldVoltNumSum);
+                    m_lDeviation->setText(QString::number(m_currDeviation*1000, 'f', 3));
+
+                    voltsPloting();
                 }
-                m_oldVoltSum += m_currVoltSum;
-                m_lVolt->setText(QString::number(m_currVoltSum/m_currVoltNum, 'f', 3));
-
-                // Calculating Deviation
-                for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
-                    m_currDeviation += round(qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2), 3);
-                }
-                m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
-                m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
-                                            + m_currVoltNum*qPow(m_currDeviation, 2)) / m_oldVoltSum);
-                m_lDeviation->setText(QString::number(m_currDeviation, 'f', 3));
-
-                voltsPloting();
             }
         }
     }    
@@ -498,7 +528,7 @@ void Dialog::fileOutputGenerate()
     m_Data.insert("ENV", dataList);
     dataList.clear();
 
-    dataList.push_back(QString::number(m_lSamplingRate->text().toDouble()/1000, 'f'));
+    dataList.push_back(QString::number(m_lSamplingRate->text().toDouble()/1000, 'f', 0));
     m_Data.insert("RATE", dataList);
     dataList.clear();
 
@@ -526,7 +556,9 @@ void Dialog::fileOutputGenerate()
     if(!m_leTempLoad->text().isEmpty()) {
         fileName += "_" + m_leTempLoad->text();
     }
-    fileName += "_" + m_lSamplingRate->text();
+    fileName += "_" + m_lVolt->text();
+    fileName += "_" + m_lDeviation->text();
+    fileName += "_" + m_lSamplingRate->text();    
     fileName += ".CSV";
 
     DataHandler dataHandler;
@@ -604,6 +636,7 @@ void Dialog::stopRec()
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
     m_bRec->setEnabled(true);
+    m_sbSamplRate->setEnabled(true);
     if(m_chbTimer->isChecked()) {
         m_leTimer->setEnabled(true);
     }
@@ -624,13 +657,14 @@ void Dialog::stopRec()
     m_leTempEnv->setEnabled(true);
     m_leTestName->setEnabled(true);    
 
-    if(m_VoltList.isEmpty() || m_isWatching) {
+    if(m_VoltList.isEmpty()) {
+        return;
+    }
+    /*if(m_VoltList.isEmpty() || m_isWatching) {
         m_isRecording = false;
         m_isWatching = false;
         return;
-    }
-    m_isRecording = false;
-    m_isWatching = false;
+    }*/
 
     // Calculating Average Voltage
     m_lVoltAvgName->setText("Average Voltage, V");
@@ -639,18 +673,22 @@ void Dialog::stopRec()
 
     // Calculating Deviation
     m_lDeviationAvgName->setText("Average Deviation, mV");
-    m_lDeviation->setText(QString::number(m_oldDeviationSum, 'f', 3));
+    m_lDeviation->setText(QString::number(m_oldDeviationSum*1000, 'f', 3));
 
     // Calculating Sampling Rate
     m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
-    m_lSamplingRate->setText(QString::number(m_oldVoltNumSum/m_oldTimeIntervalSum, 'f', 3));
+    m_lSamplingRate->setText(QString::number(m_oldVoltNumSum/m_oldTimeIntervalSum, 'f', 0));
 
-    // Filling seconds array
-    for(int i = 0; i < m_oldVoltNumSum; ++i) {
-        m_SecondList.append(QString::number(i*m_oldTimeIntervalSum/m_oldVoltNumSum, 'f'));
+    if(m_isRecording) {
+        // Filling seconds array
+        for(int i = 0; i < m_oldVoltNumSum; ++i) {
+            m_SecondList.append(QString::number(i*m_oldTimeIntervalSum/m_oldVoltNumSum, 'f'));
+        }
+        fileOutputGenerate();
     }
 
-    fileOutputGenerate();
+    m_isRecording = false;
+    m_isWatching = false;
 
     m_SecondList.clear();
     m_VoltList.clear();    
@@ -748,7 +786,7 @@ void Dialog::voltsPloting()
         return;
     }
     m_lVolt->setText(QString::number(currentVolt, 'f', 3));
-    m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 3));
+    m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 0));
     m_PlotVolts.push_back(currentVolt);
     m_PlotTime.push_back(m_LastRecieveTime);
 
@@ -826,54 +864,58 @@ bool Dialog::eventFilter(QObject *obj, QEvent *event)
     }
 
     // Move Y axis
-    if( event->type() == QEvent::Wheel && ( obj == m_plot )  && !m_ctrlWasPressed ) {
-        // Move up
-        if( dynamic_cast<QWheelEvent *>(event)->angleDelta().ry() > 0 ) {
-            if(m_yAxisMax + m_yAxisStep <= MAXYVALUE) {
-                m_yAxisMin += m_yAxisStep;
-                m_yAxisMax += m_yAxisStep;
+    if(!m_ctrlWasPressed) {
+        if( event->type() == QEvent::Wheel && ( obj == m_plot ) ) {
+            // Move up
+            if( dynamic_cast<QWheelEvent *>(event)->angleDelta().ry() > 0 ) {
+                if(m_yAxisMax + m_yAxisStep <= MAXYVALUE) {
+                    m_yAxisMin += m_yAxisStep;
+                    m_yAxisMax += m_yAxisStep;
+                }
+            } else {
+                // Move down
+                if(m_yAxisMin - m_yAxisStep >= MINYVALUE) {
+                    m_yAxisMin -= m_yAxisStep;
+                    m_yAxisMax -= m_yAxisStep;
+                }
             }
-        } else {
-            // Move down
-            if(m_yAxisMin - m_yAxisStep >= MINYVALUE) {
-                m_yAxisMin -= m_yAxisStep;
-                m_yAxisMax -= m_yAxisStep;
-            }
-        }
-        dynamic_cast<QwtPlot *>(obj)->setAxisScale( QwtPlot::yLeft,
-                                                    m_yAxisMin,
-                                                    m_yAxisMax,
-                                                    m_yAxisStep );
-        m_plot->replot();
+            dynamic_cast<QwtPlot *>(obj)->setAxisScale( QwtPlot::yLeft,
+                                                        m_yAxisMin,
+                                                        m_yAxisMax,
+                                                        m_yAxisStep );
+            m_plot->replot();
 
-        return true;
+            return true;
+        }
     }
 
     // Change scale Y axis (with ctrl modifier)
-    if( event->type() == QEvent::Wheel && ( obj == m_plot ) && m_ctrlWasPressed ) {
-        // Scale up
-        if( dynamic_cast<QWheelEvent *>(event)->angleDelta().ry() > 0 ) {
-            if(m_yAxisMax * YSCALESTEP <= MAXYVALUE) {
-                m_yAxisMin *= YSCALESTEP;
-                m_yAxisMax *= YSCALESTEP;
-                m_yAxisStep *= YSCALESTEP;
+    if(m_ctrlWasPressed) {
+        if( event->type() == QEvent::Wheel && ( obj == m_plot ) ) {
+            // Scale up
+            if( dynamic_cast<QWheelEvent *>(event)->angleDelta().ry() > 0 ) {
+                if(m_yAxisMax * YSCALESTEP <= MAXYVALUE) {
+                    m_yAxisMin *= YSCALESTEP;
+                    m_yAxisMax *= YSCALESTEP;
+                    m_yAxisStep *= YSCALESTEP;
+                }
+            } else {
+                // Scale down
+                if( m_yAxisStep / YSCALESTEP >= MINYSCALEDVALUE ) {
+                    m_yAxisMin /= YSCALESTEP;
+                    m_yAxisMax /= YSCALESTEP;
+                    m_yAxisStep /= YSCALESTEP;
+                }
             }
-        } else {
-            // Scale down
-            if( m_yAxisStep / YSCALESTEP >= MINYSCALEDVALUE ) {
-                m_yAxisMin /= YSCALESTEP;
-                m_yAxisMax /= YSCALESTEP;
-                m_yAxisStep /= YSCALESTEP;
-            }
-        }
-//        dynamic_cast<QwtPlot *>(obj)->setAxisScaleDiv(QwtPlot::yLeft, newYAxisScale(5, 10));
-        dynamic_cast<QwtPlot *>(obj)->setAxisScale( QwtPlot::yLeft,
-                                                    m_yAxisMin,
-                                                    m_yAxisMax,
-                                                    m_yAxisStep );
-        m_plot->replot();
+//            dynamic_cast<QwtPlot *>(obj)->setAxisScaleDiv(QwtPlot::yLeft, newYAxisScale(5, 10));
+            dynamic_cast<QwtPlot *>(obj)->setAxisScale( QwtPlot::yLeft,
+                                                        m_yAxisMin,
+                                                        m_yAxisMax,
+                                                        m_yAxisStep );
+            m_plot->replot();
 
-        return true;
+            return true;
+        }
     }
 
     return QWidget::eventFilter(obj, event);
