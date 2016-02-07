@@ -116,14 +116,14 @@ void Dialog::view()
 
     QGridLayout *voltAvgLayout = new QGridLayout;
     voltAvgLayout->addWidget(m_lVoltAvgName, 0, 0);
-    voltAvgLayout->addWidget(m_lVolt, 0, 2);
+    voltAvgLayout->addWidget(m_lVolt, 0, 1);
     voltAvgLayout->addWidget(m_lDeviationAvgName, 1, 0);
-    voltAvgLayout->addWidget(m_lDeviation, 1, 2);
+    voltAvgLayout->addWidget(m_lDeviation, 1, 1);
     voltAvgLayout->addWidget(m_lSamplingRateAvgName, 2, 0);
-    voltAvgLayout->addWidget(m_lSamplingRate, 2, 2);
+    voltAvgLayout->addWidget(m_lSamplingRate, 2, 1);
     voltAvgLayout->addWidget(new QLabel("Vp-p, mV", this), 3, 0);
-    voltAvgLayout->addWidget(m_lVpp, 3, 2);
-    voltAvgLayout->setSpacing(5);
+    voltAvgLayout->addWidget(m_lVpp, 3, 1);
+    voltAvgLayout->setSpacing(5);    
 
     QGridLayout *graphLayout = new QGridLayout;
     graphLayout->addWidget(m_plot);
@@ -307,7 +307,7 @@ void Dialog::received(bool isReceived)
             }
 
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
-            if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 0.5) {
+            if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 1.0) {
                 // Calculating Sampling Rate
                 m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
                 m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
@@ -337,6 +337,12 @@ void Dialog::received(bool isReceived)
                     deviation += round(qPow(m_currVoltSum/m_currVoltNum - voltsAvgInFilterPeriod, 2), 3);
                 }
                 deviation = qSqrt(deviation * (m_currMinorVoltNum / m_currVoltNum));
+#ifdef DEBUG
+                qDebug() << "Minor Ui count:" << m_currMinorVoltNum;
+                qDebug() << "Uavg:" << m_currVoltSum/m_currVoltNum;
+                qDebug() << "Ui:" << voltsAvgInFilterPeriod;
+                qDebug() << "Deviation:" << deviation;
+#endif
                 m_lDeviation->setText(QString::number(deviation * 1000, 'f', 3));
                 m_oldMinorVoltNumSum += m_currMinorVoltNum;
 
@@ -373,6 +379,9 @@ void Dialog::record()
         m_bSetRate->setEnabled(false);
         m_bRec->setEnabled(false);
         m_bStopRec->setEnabled(true);
+        m_sbFilterFreq->setEnabled(false);
+
+        m_filterFreq = m_sbFilterFreq->value();
 
         if(m_chbTimer->isChecked()) {
             m_leTimer->setEnabled(false);            
@@ -626,6 +635,7 @@ void Dialog::stopRec()
     m_bStopRec->setEnabled(false);
     m_bRec->setEnabled(true);
     m_sbSamplRate->setEnabled(true);
+    m_sbFilterFreq->setEnabled(true);
     if(m_chbTimer->isChecked()) {
         m_leTimer->setEnabled(true);
     }
