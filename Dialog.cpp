@@ -48,18 +48,28 @@
 #define YSCALESTEP 2
 #define MINYSCALEDVALUE 0.0625 // V
 
+#define MINORCOUNTLIMIT 300000
+
 void Dialog::view()
 {
+    QGridLayout *modesLayout = new QGridLayout;
+    modesLayout->addWidget(m_rbNormal, 0, 0);
+    modesLayout->addWidget(m_rbContinuous, 1, 0);
+    modesLayout->setSpacing(5);
+
+    QGroupBox *gbModes = new QGroupBox("Display Modes", this);
+    gbModes->setLayout(modesLayout);
+
     QGridLayout *portLayout = new QGridLayout;
-    portLayout->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 0, 2, 2, Qt::AlignCenter);
-    portLayout->addWidget(new QLabel("Port", this), 2, 0);
-    portLayout->addWidget(m_cbPort, 2, 1);
-    portLayout->addWidget(new QLabel("Baud", this), 3, 0);
-    portLayout->addWidget(m_cbBaud, 3, 1);
-    portLayout->addWidget(m_bStart, 4, 0);
-    portLayout->addWidget(m_bStop, 4, 1);
-    portLayout->addWidget(m_lTx, 5, 0);
-    portLayout->addWidget(m_lRx, 5, 1);
+    portLayout->addWidget(new QLabel("Port", this), 0, 0);
+    portLayout->addWidget(m_cbPort, 0, 1);
+    portLayout->addWidget(new QLabel("Baud", this), 1, 0);
+    portLayout->addWidget(m_cbBaud, 1, 1);
+    portLayout->addWidget(m_bStart, 2, 0);
+    portLayout->addWidget(m_bStop, 2, 1);
+    portLayout->addWidget(m_lTx, 3, 0, 2, 1);
+    portLayout->addWidget(m_lRx, 3, 1, 2, 1);
+    portLayout->addWidget(gbModes, 5, 0, 2, 2);
     portLayout->setSpacing(5);
 
     m_sbSamplRate->setMaximumWidth(100);
@@ -82,11 +92,13 @@ void Dialog::view()
     playButtonsLayout->setSpacing(5);
 
     QGridLayout *controlLayout = new QGridLayout;
-    controlLayout->addWidget(new QLabel("Samples Rate, Hz", this), 0, 0);
-    controlLayout->addWidget(m_sbSamplRate, 0, 1);
-    controlLayout->addWidget(m_bSetRate, 1, 0, 1, 2);
-    controlLayout->addWidget(gbMeasureTime, 2, 0, 3, 2);
-    controlLayout->addItem(playButtonsLayout, 5, 0, 1, 2);
+    controlLayout->addWidget(new QLabel("Filter frequency, Hz", this), 0, 0);
+    controlLayout->addWidget(m_sbFilterFreq, 0, 1);
+    controlLayout->addWidget(new QLabel("Samples Rate, Hz", this), 1, 0);
+    controlLayout->addWidget(m_sbSamplRate, 1, 1);
+    controlLayout->addWidget(m_bSetRate, 2, 0, 1, 2);
+    controlLayout->addWidget(gbMeasureTime, 3, 0, 3, 2);
+    controlLayout->addItem(playButtonsLayout, 6, 0, 1, 2);
     controlLayout->setSpacing(5);
 
     QGridLayout *infoLayout = new QGridLayout;
@@ -100,15 +112,7 @@ void Dialog::view()
     infoLayout->addWidget(m_leTempEnv, 3, 1);
     infoLayout->addWidget(new QLabel("Temperature of Load, °C", this), 4, 0);
     infoLayout->addWidget(m_leTempLoad, 4, 1);
-    infoLayout->setSpacing(5);
-
-    QGridLayout *modesLayout = new QGridLayout;
-    modesLayout->addWidget(m_rbNormal, 0, 0);
-    modesLayout->addWidget(m_rbContinuous, 1, 0);
-    modesLayout->setSpacing(5);
-
-    QGroupBox *gbModes = new QGroupBox("Display Modes", this);
-    gbModes->setLayout(modesLayout);
+    infoLayout->setSpacing(5);    
 
     QGridLayout *voltAvgLayout = new QGridLayout;
     voltAvgLayout->addWidget(m_lVoltAvgName, 0, 0);
@@ -124,15 +128,16 @@ void Dialog::view()
     QGridLayout *graphLayout = new QGridLayout;
     graphLayout->addWidget(m_plot);
     graphLayout->setSpacing(5);
-    m_plot->setMaximumSize(450, 450);
+    m_plot->setMaximumSize(450, 450);    
 
     QGridLayout *allLayouts = new QGridLayout;
     allLayouts->addItem(portLayout, 0, 0);
-    allLayouts->addItem(controlLayout, 0, 1);
+    allLayouts->addItem(controlLayout, 0, 1);    
     allLayouts->addItem(infoLayout, 1, 0, 1, 2);
-    allLayouts->addWidget(gbModes, 2, 0, 4, 1);
     allLayouts->addItem(voltAvgLayout, 2, 1, 1, 3);
     allLayouts->addItem(graphLayout, 0, 3, 4, 4, Qt::AlignCenter);
+    allLayouts->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this),
+                          2, 0, 2, 2, Qt::AlignLeft);
     allLayouts->setSpacing(5);
 
     setLayout(allLayouts);
@@ -303,62 +308,46 @@ void Dialog::received(bool isReceived)
 
             m_VoltList.push_back(QString::number(currentVoltage, 'f'));
             if(m_CurrentTime->elapsed()/1000.0 - m_LastRecieveTime >= 0.5) {
-                if(m_isWatching) {
-                    // Calculating Sampling Rate
-                    m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
-                    m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
-                    m_oldTimeIntervalSum += m_currTimeInterval;
-                    m_currVoltNum = m_VoltList.size();
-                    m_oldVoltNumSum += m_currVoltNum;
-                    m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 0));
+                // Calculating Sampling Rate
+                m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
+                m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
+                m_oldTimeIntervalSum += m_currTimeInterval;
+                m_currVoltNum = m_VoltList.size();
+                m_oldVoltNumSum += m_currVoltNum;
+                m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 0));
 
-                    // Calculating Average Voltage
-                    m_currVoltSum = 0;
-                    for(int i = 0; i < m_currVoltNum; ++i) {
-                        m_currVoltSum += m_VoltList.at(i).toDouble();
-                    }
-                    m_oldVoltSum += m_currVoltSum;
-                    m_lVolt->setText(QString::number(m_currVoltSum/m_currVoltNum, 'f', 3));
-
-                    // Calculating Deviation
-                    for(int i = 0; i < m_currVoltNum; ++i) {
-                        m_currDeviation += round(qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2), 6);
-                    }
-                    m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
-                    m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
-                                                + m_currVoltNum*qPow(m_currDeviation, 2)) / m_oldVoltNumSum);
-                    m_lDeviation->setText(QString::number(m_currDeviation, 'f', 3));
-
-                    voltsPloting();
-                    m_VoltList.clear();
-                } else {
-                    // Calculating Sampling Rate
-                    m_LastRecieveTime = m_CurrentTime->elapsed()/1000.0;
-                    m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
-                    m_oldTimeIntervalSum += m_currTimeInterval;
-                    m_currVoltNum = m_VoltList.size() - m_oldVoltNumSum;
-                    m_oldVoltNumSum += m_currVoltNum;
-                    m_lSamplingRate->setText(QString::number(m_currVoltNum/m_currTimeInterval, 'f', 0));
-
-                    // Calculating Average Voltage
-                    m_currVoltSum = 0;
-                    for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
-                        m_currVoltSum += m_VoltList.at(i).toDouble();
-                    }
-                    m_oldVoltSum += m_currVoltSum;
-                    m_lVolt->setText(QString::number(m_currVoltSum/m_currVoltNum, 'f', 3));
-
-                    // Calculating Deviation
-                    for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
-                        m_currDeviation += round(qPow(m_currVoltSum/m_currVoltNum - m_VoltList.at(i).toDouble(), 2), 6);
-                    }
-                    m_currDeviation = qSqrt(m_currDeviation/m_currVoltNum);
-                    m_oldDeviationSum = qSqrt( ((m_oldVoltNumSum - m_currVoltNum)*qPow(m_oldDeviationSum, 2)
-                                                + m_currVoltNum*qPow(m_currDeviation, 2)) / m_oldVoltNumSum);
-                    m_lDeviation->setText(QString::number(m_currDeviation*1000, 'f', 3));
-
-                    voltsPloting();
+                // Calculating Average Voltage
+                m_currVoltSum = 0;
+                for(int i = 0; i < m_currVoltNum; ++i) {
+                    m_currVoltSum += m_VoltList.at(i).toDouble();
                 }
+                m_oldVoltSum += m_currVoltSum;
+                m_lVolt->setText(QString::number(m_currVoltSum/m_currVoltNum, 'f', 3));
+
+                // Calculating Deviation
+                double voltsAvgInFilterPeriod = 0;
+                double deviation = 0;
+                m_currMinorVoltNum = static_cast<int>(m_currVoltNum / (m_currTimeInterval * m_filterFreq));
+                for(int i = 0; i < m_currVoltNum / m_currMinorVoltNum; i += m_currMinorVoltNum) {
+                    for(int j = i; j < m_currMinorVoltNum + i; ++j) {
+                        voltsAvgInFilterPeriod += m_VoltList.at(j).toDouble();
+                    }
+                    voltsAvgInFilterPeriod /= m_currMinorVoltNum;
+                    m_minorVoltSum.append(voltsAvgInFilterPeriod);
+                    deviation += round(qPow(m_currVoltSum/m_currVoltNum - voltsAvgInFilterPeriod, 2), 3);
+                }
+                deviation = qSqrt(deviation * (m_currMinorVoltNum / m_currVoltNum));
+                m_lDeviation->setText(QString::number(deviation * 1000, 'f', 3));
+                m_oldMinorVoltNumSum += m_currMinorVoltNum;
+
+                voltsPloting();
+
+                if(m_isWatching) {                    
+                    m_VoltList.clear();
+                    if(m_minorVoltSum.size() > MINORCOUNTLIMIT) {
+                        m_minorVoltSum.remove(0, m_minorVoltSum.size() - MINORCOUNTLIMIT);
+                    }
+               }
             }
         }
     }    
@@ -416,21 +405,21 @@ void Dialog::record()
         m_PlotVolts.clear();
         m_PlotTime.clear();
 
+        m_minorVoltSum.clear();
+
         m_LastRecieveTime = 0;
         m_oldVoltSum = 0;
         m_currVoltSum = 0;
-        m_oldDeviationSum = 0;
-        m_currDeviation = 0;
+        m_avgDeviation = 0;
         m_oldVoltNumSum = 0;
         m_currVoltNum = 0;
         m_oldTimeIntervalSum = 0;
         m_currTimeInterval = 0;
+        m_oldMinorVoltNumSum = 0;
+        m_currMinorVoltNum = 0;
         m_PrevTime = 0;
 
-        m_plot->setAxisScale( QwtPlot::xBottom,
-                              0,
-                              60,
-                              10 );
+        m_plot->setAxisScale( QwtPlot::xBottom, 0, 60, 10 );
 
         m_maxVoltage = MAXVOLT;
         m_minVoltage = MINVOLT;
@@ -659,30 +648,31 @@ void Dialog::stopRec()
 
     if(m_VoltList.isEmpty()) {
         return;
-    }
-    /*if(m_VoltList.isEmpty() || m_isWatching) {
-        m_isRecording = false;
-        m_isWatching = false;
-        return;
-    }*/
+    }    
 
     // Calculating Average Voltage
     m_lVoltAvgName->setText("Average Voltage, V");
-    m_lVolt->setText(QString::number(m_oldVoltSum/m_oldVoltNumSum, 'f', 3));
+    m_lVolt->setText(QString::number(m_oldVoltSum / m_oldVoltNumSum, 'f', 3));
     // end Calculatin Average Voltage
 
     // Calculating Deviation
     m_lDeviationAvgName->setText("Average Deviation, mV");
-    m_lDeviation->setText(QString::number(m_oldDeviationSum*1000, 'f', 3));
+    for(int i = 0; i < m_minorVoltSum.size(); ++i) {
+        m_avgDeviation += qPow(m_minorVoltSum.at(i) - m_oldVoltSum / m_oldVoltNumSum, 2);
+    }
+    m_avgDeviation /= m_minorVoltSum.size();
+    m_minorVoltSum.clear();
+    m_avgDeviation = sqrt(m_avgDeviation);
+    m_lDeviation->setText(QString::number(m_avgDeviation * 1000, 'f', 3));
 
     // Calculating Sampling Rate
     m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
-    m_lSamplingRate->setText(QString::number(m_oldVoltNumSum/m_oldTimeIntervalSum, 'f', 0));
+    m_lSamplingRate->setText(QString::number(m_oldVoltNumSum / m_oldTimeIntervalSum, 'f', 0));
 
     if(m_isRecording) {
         // Filling seconds array
         for(int i = 0; i < m_oldVoltNumSum; ++i) {
-            m_SecondList.append(QString::number(i*m_oldTimeIntervalSum/m_oldVoltNumSum, 'f'));
+            m_SecondList.append(QString::number(i * m_oldTimeIntervalSum / m_oldVoltNumSum, 'f'));
         }
         fileOutputGenerate();
     }
@@ -845,6 +835,15 @@ void Dialog::continuousMode(bool isContinuous)
     }
 }
 
+void Dialog::setFilterFreq(int Hz)
+{
+    if(Hz > 0) {
+        m_filterFreq = Hz;
+    } else {
+        m_filterFreq = 1;
+    }
+}
+
 bool Dialog::eventFilter(QObject *obj, QEvent *event)
 {
     if( event->type() == QEvent::KeyPress && ( obj == this ) ) {
@@ -936,6 +935,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_sbSamplRate(new QSpinBox(this))
     , m_bSetRate(new QPushButton("Set Rate", this))
     , m_bStopRec(new QPushButton(QIcon(":/Resources/stopRecToFile.png"), QString::null, this))
+    , m_sbFilterFreq(new QSpinBox(this))
     , m_leSerialNum(new QLineEdit(this))
     , m_leModelName(new QLineEdit(this))
     , m_leTempLoad(new QLineEdit(this))
@@ -965,19 +965,22 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_PrevTime(0.0)
     , m_maxVoltage(MAXVOLT)
     , m_minVoltage(MINVOLT)
-    , m_rbNormal(new QRadioButton("Normal", this))
-    , m_rbContinuous(new QRadioButton("Continuous", this))
+    , m_rbNormal(new QRadioButton("Record", this))
+    , m_rbContinuous(new QRadioButton("Watch", this))
     , m_lVoltAvgName(new QLabel("Voltage, V", this))
     , m_lDeviationAvgName(new QLabel("Deviation, mV", this))
     , m_lSamplingRateAvgName(new QLabel("Sampling Rate, Hz", this))    
     , m_oldVoltSum(0)
     , m_currVoltSum(0)
-    , m_oldDeviationSum(0)
-    , m_currDeviation(0)
+    , m_avgDeviation(0)
+//    , m_currDeviation(0)
     , m_oldVoltNumSum(0)
     , m_currVoltNum(0)
     , m_oldTimeIntervalSum(0)
     , m_currTimeInterval(0)
+    , m_filterFreq(1)
+    , m_oldMinorVoltNumSum(0)
+    , m_currMinorVoltNum(0)
     , m_ctrlWasPressed(false)
     , m_yAxisMin(0)
     , m_yAxisMax(5)
@@ -989,6 +992,7 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     qApp->installEventFilter(this);
 
+    m_sbFilterFreq->setRange(1, 30000);
     m_sbSamplRate->setRange(1, 115200);
 
     m_lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");

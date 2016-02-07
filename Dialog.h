@@ -38,6 +38,8 @@ class Dialog : public QWidget
     QPushButton *m_bSetRate;
     QPushButton *m_bStopRec;
 
+    QSpinBox *m_sbFilterFreq;
+
     QLineEdit *m_leSerialNum;
     QLineEdit *m_leModelName;
     QLineEdit *m_leTempLoad;
@@ -89,12 +91,17 @@ class Dialog : public QWidget
 
     double m_oldVoltSum;
     double m_currVoltSum;
-    double m_oldDeviationSum;
-    double m_currDeviation;
-    double m_oldVoltNumSum;
-    double m_currVoltNum;
+    double m_avgDeviation;
+//    double m_currDeviation;
+    int m_oldVoltNumSum;
+    int m_currVoltNum;
     double m_oldTimeIntervalSum;
     double m_currTimeInterval;
+    int m_filterFreq;
+//    QVector<double> m_oldMinorVoltSum;
+    QVector<double> m_minorVoltSum;
+    int m_oldMinorVoltNumSum;
+    int m_currMinorVoltNum;
 
     bool m_ctrlWasPressed;
     double m_yAxisMin;
@@ -128,6 +135,7 @@ private slots:
     void voltsPloting();
     void normalMode(bool isNormal);
     void continuousMode(bool isContinuous);
+    void setFilterFreq(int Hz);
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
 public:
