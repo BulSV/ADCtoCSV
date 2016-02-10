@@ -46,14 +46,16 @@ HEADERS += \
     IProtocol.h \
     ADCtoCSVProtocol.h \
     Dialog.h \
-    DataHandler.h
+    DataHandler.h \
+    BufferParser.h
 
 SOURCES += \
     ComPort.cpp \
     main.cpp \
     ADCtoCSVProtocol.cpp \
     Dialog.cpp \
-    DataHandler.cpp
+    DataHandler.cpp \
+    BufferParser.cpp
 
 RESOURCES += \
     ADCtoCSV.qrc

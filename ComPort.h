@@ -5,11 +5,14 @@
 #include <QtSerialPort/QSerialPort>
 #include <QByteArray>
 #include <QTimer>
+//#include "BufferParser.h"
+
+class BufferParser;
 
 class ComPort: public QObject
 {
-    Q_OBJECT
-public:
+    Q_OBJECT    
+public:    
     ComPort(QSerialPort *port,
             int startByte = 0x55,
             int stopByte = 0xAA,
@@ -17,6 +20,7 @@ public:
             bool isMaster = true,
             int bufferTime_ms = 1000,
             QObject *parent = 0);
+    ~ComPort();
     QByteArray getReadData() const;
     void setWriteData(const QByteArray &data);
     QByteArray getWriteData() const;
@@ -31,12 +35,16 @@ signals:
 private slots:
     void readData();
     void bufferData();
+    void bufferDef();
 private:
+    friend class BufferParser;
+
     QSerialPort *m_port;
 
     QByteArray m_readData;
     QByteArray m_writeData;
     QByteArray m_bufferData;
+    QByteArray m_doubleBufferData;
 
     int m_startByte;
     int m_stopByte;
@@ -46,10 +54,14 @@ private:
 
     bool m_isDataWritten;
     bool m_isMaster;
+    volatile bool m_isDataParsing;
 
     QTimer *m_readBufferTimer;
 
+    BufferParser *m_bufferParser;
+
     void privateWriteData();
+    void bufferParser();
 };
 
 #endif // ONEPACKET_H

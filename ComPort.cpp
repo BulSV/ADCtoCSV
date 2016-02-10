@@ -3,6 +3,8 @@
 #endif
 
 #include "ComPort.h"
+#include "BufferParser.h"
+
 #include <QApplication>
 #include <QTime>
 #include <QDebug>
@@ -23,55 +25,38 @@ ComPort::ComPort(QSerialPort *port,
     , m_bufferSize(1)
     , m_isDataWritten(true)
     , m_isMaster(isMaster)
+    , m_isDataParsing(false)
     , m_readBufferTimer(new QTimer(this))
+    , m_bufferParser(new BufferParser(this))
 {   
     m_port->setReadBufferSize(m_bufferSize); // for reading m_bufferSize bytes at the time
     m_readBufferTimer->setInterval(bufferTime_ms); // timer that determined buffer size by time
 
     connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
-    connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(readData()));
+    connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
+}
+
+ComPort::~ComPort()
+{
+    delete m_bufferParser;
 }
 
 void ComPort::readData()
-{    
-    m_readBufferTimer->stop();
-    if(m_bufferSize == 1) {
-        m_bufferSize = m_bufferData.size();
+{
+    if(m_port->bytesAvailable() > 0) {
+        m_bufferData.append(m_port->read(m_bufferSize));
+
+        m_doubleBufferData.append(m_bufferData);
+#ifdef DEBUG
+        qDebug() << "m_bufferData.size():" << m_bufferData.size();
+        qDebug() << "m_doubleBufferData.size():" << m_doubleBufferData.size();
+#endif
         m_bufferData.clear();
-        m_port->setReadBufferSize(m_bufferSize);
-        return;
-    }
-    QByteArray buffer;
-    buffer = m_bufferData;
-    m_bufferData.clear();
 
-    while (buffer.size()) {
-        if(!m_counter && buffer.at(0) == static_cast<char>(m_startByte)) {
-            m_readData.append(buffer.at(0));
-            ++m_counter;
-        } else if(m_counter && m_counter < m_packetLenght) {
-            m_readData.append(buffer.at(0));
-            ++m_counter;
-
-            if((m_counter == m_packetLenght)
-                    && (m_readData.at(m_packetLenght - 1) == static_cast<char>(m_stopByte))) {
-                emit DataIsReaded(true);
-                emit ReadedData(m_readData);
-
-                if(!m_isMaster && !m_isDataWritten) {
-                    privateWriteData();
-                }
-
-                m_readData.clear();
-                m_counter = 0;
-            }
-        } else {
-            emit DataIsReaded(false);
-
-            m_readData.clear();
-            m_counter = 0;
+        if(!m_isDataParsing) {
+//            bufferParser();
+            m_bufferParser->run();
         }
-        buffer.remove(0, 1);
     }
 }
 
@@ -85,6 +70,17 @@ void ComPort::bufferData()
             m_bufferData.append(m_port->read(m_bufferSize));
         }
     }
+}
+
+void ComPort::bufferDef()
+{
+    disconnect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
+    disconnect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
+    m_readBufferTimer->stop();
+    m_bufferSize = m_bufferData.size();
+    m_bufferData.clear();
+    m_port->setReadBufferSize(m_bufferSize);
+    connect(m_port, SIGNAL(readyRead()), this, SLOT(readData()));
 }
 
 QByteArray ComPort::getReadData() const
@@ -107,6 +103,10 @@ void ComPort::resetBufferSize()
 {
     m_bufferSize = 1;
     m_port->setReadBufferSize(m_bufferSize);
+    m_bufferData.clear();
+    m_readBufferTimer->start();
+    connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
+    connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
 }
 
 void ComPort::privateWriteData()
@@ -117,6 +117,40 @@ void ComPort::privateWriteData()
         emit WritedData(m_writeData);
         m_isDataWritten = true;
     }
+}
+
+void ComPort::bufferParser()
+{
+    m_isDataParsing = true;
+    while (m_doubleBufferData.size()) {
+        if(!m_counter && m_doubleBufferData.at(0) == static_cast<char>(m_startByte)) {
+            m_readData.append(m_doubleBufferData.at(0));
+            ++m_counter;
+        } else if(m_counter && m_counter < m_packetLenght) {
+            m_readData.append(m_doubleBufferData.at(0));
+            ++m_counter;
+
+            if((m_counter == m_packetLenght)
+                    && (m_readData.at(m_packetLenght - 1) == static_cast<char>(m_stopByte))) {
+                emit DataIsReaded(true);
+                emit ReadedData(m_readData);
+
+                if(!m_isMaster && !m_isDataWritten) {
+                    privateWriteData();
+                }
+
+                m_readData.clear();
+                m_counter = 0;
+            }
+        } else {
+            emit DataIsReaded(false);
+
+            m_readData.clear();
+            m_counter = 0;
+        }
+        m_doubleBufferData.remove(0, 1);
+    }
+    m_isDataParsing = false;
 }
 
 void ComPort::writeData()
