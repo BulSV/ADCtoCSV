@@ -843,12 +843,12 @@ void Dialog::timeDisplay()
 
 void Dialog::voltsPloting()
 {
-    double currentVolt = 0.0;
-    if(!m_VoltList.isEmpty()) {
+    double currentVolt = m_currVoltSum / m_currVoltNum;
+    /*if(!m_VoltList.isEmpty()) {
         currentVolt = m_VoltList.last().toDouble();
     } else {
         return;
-    }
+    }*/
     m_lVolt->setText(QString::number(currentVolt, 'f', 3));
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 0));
     m_PlotVolts.push_back(currentVolt);
