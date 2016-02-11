@@ -183,7 +183,7 @@ void Dialog::connections()
 
 void Dialog::toggleTimer(bool isEnabled)
 {
-    if(!m_isRecording) {
+    if(!m_isRecording || !m_isWatching) {
         m_leTimer->setEnabled(isEnabled);
         m_leTimer->setInputMask("00:00:00;#");
     }
@@ -834,7 +834,7 @@ void Dialog::timeCountdown()
 
 void Dialog::timeDisplay()
 {
-    if(m_chbTimer->isChecked() && m_isRecording) {
+    if(m_chbTimer->isChecked() && (m_isRecording || m_isWatching)) {
         timeCountdown();
     } else {
         timeCountUp();
