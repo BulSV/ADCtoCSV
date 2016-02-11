@@ -301,123 +301,63 @@ void Dialog::received(bool isReceived)
 				m_minVoltage = currentVoltage;
 			}
 
-			m_VoltList.push_back(QString::number(currentVoltage, 'f'));
-#ifdef DEBUG
-                    qDebug() << "!!!";
-                    qDebug() << "SIZE:" << m_VoltList.size();
-#endif
-            if(m_CurrentTime->elapsed() / 1000.0 - m_LastRecieveTime >= 1.0) {
-				if(m_isWatching) {
-                    // Calculating Sampling Rate
-                    m_LastRecieveTime = m_CurrentTime->elapsed() / 1000.0;
-                    m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
-                    m_oldTimeIntervalSum += m_currTimeInterval;
-                    m_currVoltNum = m_VoltList.size();
-                    m_oldVoltNumSum += m_currVoltNum;
-                    m_lSamplingRate->setText(QString::number(m_currVoltNum / m_currTimeInterval, 'f', 0));
-					// Calculating Average Voltage
-					m_currVoltSum = 0;
-					for(int i = 0; i < m_currVoltNum; ++i) {
-						m_currVoltSum += m_VoltList.at(i).toDouble();
-					}
-					m_oldVoltSum += m_currVoltSum;
-                    m_lVolt->setText(QString::number(m_currVoltSum / m_currVoltNum, 'f', 3));
+            if(m_isRecording) {
+                m_VoltList.push_back(QString::number(currentVoltage, 'f'));
+            }
+            m_currVoltList.push_back(QString::number(currentVoltage, 'f'));
 
-					// Calculating Deviation
-					double voltsAvgInFilterPeriod = 0;
-					double deviation = 0;
-					m_currMinorVoltNum = static_cast<int>(m_currVoltNum / (m_currTimeInterval * m_filterFreq));
-                    if(m_currMinorVoltNum) {
-                        for(int i = 0; i < m_currVoltNum / m_currMinorVoltNum; i += m_currMinorVoltNum) {
-                            for(int j = i; j < m_currMinorVoltNum + i; ++j) {
-                                voltsAvgInFilterPeriod += m_VoltList.at(j).toDouble();
-                            }
-                            voltsAvgInFilterPeriod /= m_currMinorVoltNum;
-                            m_minorVoltSum.append(voltsAvgInFilterPeriod);
-                            deviation += round(qPow(m_currVoltSum / m_currVoltNum - voltsAvgInFilterPeriod, 2), 6);
-                            voltsAvgInFilterPeriod = 0;
+            if(m_CurrentTime->elapsed() / 1000.0 - m_LastRecieveTime >= 1.0) {				
+                // Calculating Sampling Rate
+                m_LastRecieveTime = m_CurrentTime->elapsed() / 1000.0;
+                m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
+                m_oldTimeIntervalSum += m_currTimeInterval;
+                m_currVoltNum = m_currVoltList.size();
+                m_oldVoltNumSum += m_currVoltNum;
+                m_lSamplingRate->setText(QString::number(m_currVoltNum / m_currTimeInterval, 'f', 0));
+                // Calculating Average Voltage
+                m_currVoltSum = 0;
+                for(int i = 0; i < m_currVoltNum; ++i) {
+                    m_currVoltSum += m_currVoltList.at(i).toDouble();
+                }
+                m_oldVoltSum += m_currVoltSum;
+                m_lVolt->setText(QString::number(m_currVoltSum / m_currVoltNum, 'f', 3));
+
+                // Calculating Deviation
+                double voltsAvgInFilterPeriod = 0;
+                double deviation = 0;
+                m_currMinorVoltNum = static_cast<int>(m_currVoltNum / (m_currTimeInterval * m_filterFreq));
+                if(m_currMinorVoltNum) {
+                    for(int i = 0; i < m_currVoltNum / m_currMinorVoltNum; i += m_currMinorVoltNum) {
+                        for(int j = i; j < m_currMinorVoltNum + i; ++j) {
+                            voltsAvgInFilterPeriod += m_currVoltList.at(j).toDouble();
                         }
-#ifdef DEBUG
-                        qDebug() << "Deviation:" << deviation;
-#endif
-                        deviation = qSqrt(deviation * m_currMinorVoltNum / m_currVoltNum);
-#ifdef DEBUG
-                        qDebug() << "Current Volts Number:" << m_currVoltNum;
-                        qDebug() << "Minor Ui count:" << m_currMinorVoltNum;
-                        qDebug() << "Uavg:" << m_currVoltSum / m_currVoltNum;
-                        qDebug() << "m_currTimeInterval:" << m_currTimeInterval;
-//                        qDebug() << "Ui:" << voltsAvgInFilterPeriod;
-                        qDebug() << "Deviation:" << deviation;
-#endif
-                        m_lDeviation->setText(QString::number(deviation * 1000, 'f', 3));
-                        m_oldMinorVoltNumSum += m_currMinorVoltNum;
-
-                        voltsPloting();
+                        voltsAvgInFilterPeriod /= m_currMinorVoltNum;
+                        m_minorVoltSum.append(voltsAvgInFilterPeriod);
+                        deviation += round(qPow(m_currVoltSum / m_currVoltNum - voltsAvgInFilterPeriod, 2), 6);
+                        voltsAvgInFilterPeriod = 0;
                     }
-
-					m_VoltList.clear();
-
-					if(m_minorVoltSum.size() > MINORCOUNTLIMIT) {
-						m_minorVoltSum.remove(0, m_minorVoltSum.size() - MINORCOUNTLIMIT);
-					}
-				} else {
-                    // Calculating Sampling Rate
-                    m_LastRecieveTime = m_CurrentTime->elapsed() / 1000.0;
-                    m_currTimeInterval = m_LastRecieveTime - m_oldTimeIntervalSum;
-                    m_oldTimeIntervalSum += m_currTimeInterval;
-                    m_currVoltNum = m_VoltList.size() - m_oldVoltNumSum;
-                    m_oldVoltNumSum += m_currVoltNum;
-                    m_lSamplingRate->setText(QString::number(m_currVoltNum / m_currTimeInterval, 'f', 0));
-					// Calculating Average Voltage					
-					for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum; ++i) {
-						m_currVoltSum += m_VoltList.at(i).toDouble();
-					}
-					m_oldVoltSum += m_currVoltSum;
-                    m_lVolt->setText(QString::number(m_currVoltSum / m_currVoltNum, 'f', 3));
-
-					// Calculating Deviation
-                    double voltsAvgInFilterPeriod = 0;
-                    double deviation = 0;
-                    m_currMinorVoltNum = static_cast<int>(m_currVoltNum / (m_currTimeInterval * m_filterFreq));
 #ifdef DEBUG
-                    qDebug() << "ТУТА?[1]";
-                    qDebug() << "SIZE:" << m_VoltList.size();
-                    qDebug() << "m_oldVoltNumSum:" << m_oldVoltNumSum;
-                    qDebug() << "m_currVoltNum:" << m_currVoltNum;
-                    qDebug() << "m_filterFreq:" << m_filterFreq;
-                    qDebug() << "m_oldTimeIntervalSum:" << m_oldTimeIntervalSum;
+                    qDebug() << "Deviation:" << deviation;
+#endif
+                    deviation = qSqrt(deviation * m_currMinorVoltNum / m_currVoltNum);
+#ifdef DEBUG
+                    qDebug() << "Current Volts Number:" << m_currVoltNum;
+                    qDebug() << "Minor Ui count:" << m_currMinorVoltNum;
+                    qDebug() << "Uavg:" << m_currVoltSum / m_currVoltNum;
                     qDebug() << "m_currTimeInterval:" << m_currTimeInterval;
-                    qDebug() << "m_currMinorVoltNum:" << m_currMinorVoltNum;
-#endif                    
-                    if(m_currMinorVoltNum) {
-                        for(int i = m_oldVoltNumSum - m_currVoltNum; i < m_oldVoltNumSum - m_currMinorVoltNum; i += m_currMinorVoltNum) {
-#ifdef DEBUG
-                            qDebug() << "ТУТА?[2]";
+                    qDebug() << "Deviation:" << deviation;
 #endif
-                            for(int j = i; j < m_currMinorVoltNum + i; ++j) {
-                                voltsAvgInFilterPeriod += m_VoltList.at(j).toDouble();
-#ifdef DEBUG
-                                qDebug() << "m_VoltList.at(" << j << ").toDouble()" << m_VoltList.at(j).toDouble();
-#endif
-                            }
-                            voltsAvgInFilterPeriod /= m_currMinorVoltNum;
-                            m_minorVoltSum.append(voltsAvgInFilterPeriod);
-                            deviation += round(qPow(m_currVoltSum / m_currVoltNum - voltsAvgInFilterPeriod, 2), 6);
-//                            qDebug() << "Ui:" << voltsAvgInFilterPeriod;
-                            voltsAvgInFilterPeriod = 0;
-                        }
-                        deviation = qSqrt(deviation * m_currMinorVoltNum / m_currVoltNum);
-#ifdef DEBUG
-                        qDebug() << "Minor Ui count:" << m_currMinorVoltNum;
-                        qDebug() << "Uavg:" << m_currVoltSum / m_currVoltNum;
-                        qDebug() << "Deviation:" << deviation;
-#endif
-                        m_lDeviation->setText(QString::number(deviation * 1000, 'f', 3));
-                        m_oldMinorVoltNumSum += m_currMinorVoltNum;
+                    m_lDeviation->setText(QString::number(deviation * 1000, 'f', 3));
+                    m_oldMinorVoltNumSum += m_currMinorVoltNum;
 
-                        voltsPloting();
-                    }
-				}
+                    voltsPloting();
+                }
+
+                m_currVoltList.clear();
+
+                if(m_minorVoltSum.size() > MINORCOUNTLIMIT) {
+                    m_minorVoltSum.remove(0, m_minorVoltSum.size() - MINORCOUNTLIMIT);
+                }
 			}
 		}
 	}    
@@ -844,11 +784,6 @@ void Dialog::timeDisplay()
 void Dialog::voltsPloting()
 {
     double currentVolt = m_currVoltSum / m_currVoltNum;
-    /*if(!m_VoltList.isEmpty()) {
-        currentVolt = m_VoltList.last().toDouble();
-    } else {
-        return;
-    }*/
     m_lVolt->setText(QString::number(currentVolt, 'f', 3));
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 0));
     m_PlotVolts.push_back(currentVolt);
