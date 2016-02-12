@@ -784,6 +784,9 @@ void Dialog::timeDisplay()
 
 void Dialog::voltsPloting()
 {
+    if(!m_currVoltNum) {
+        return;
+    }
     double currentVolt = m_currVoltSum / m_currVoltNum;
     m_lVolt->setText(QString::number(currentVolt, 'f', 3));
     m_lVpp->setText(QString::number(1000*(m_maxVoltage - m_minVoltage), 'f', 0));
