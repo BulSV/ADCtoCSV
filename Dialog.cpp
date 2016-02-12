@@ -237,6 +237,7 @@ void Dialog::stop()
 void Dialog::start()
 {
     m_Port->close();
+    m_ComPort->resetBufferSize();
     m_Port->setPortName(m_cbPort->currentText());
 
     if(m_Port->open(QSerialPort::ReadWrite))
@@ -271,9 +272,7 @@ void Dialog::start()
         } else {
             m_bRec->setIcon(QIcon(":/Resources/Play.png"));
         }
-    }
-
-    m_ComPort->resetBufferSize();
+    }    
 }
 
 void Dialog::received(bool isReceived)

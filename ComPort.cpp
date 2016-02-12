@@ -54,7 +54,6 @@ void ComPort::readData()
         m_bufferData.clear();
 
         if(!m_isDataParsing) {
-//            bufferParser();
             m_bufferParser->run();
         }
     }
@@ -101,12 +100,13 @@ QByteArray ComPort::getWriteData() const
 
 void ComPort::resetBufferSize()
 {
+    disconnect(m_port, SIGNAL(readyRead()), this, SLOT(readData()));
     m_bufferSize = 1;
     m_port->setReadBufferSize(m_bufferSize);
-    m_bufferData.clear();
-    m_readBufferTimer->start();
+    m_bufferData.clear();    
     connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
     connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
+    m_readBufferTimer->start();
 }
 
 void ComPort::privateWriteData()
