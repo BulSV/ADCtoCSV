@@ -657,11 +657,13 @@ void Dialog::stopRec()
     m_leModelName->setEnabled(true);
     m_leTempLoad->setEnabled(true);
     m_leTempEnv->setEnabled(true);
-    m_leTestName->setEnabled(true);    
+    m_leTestName->setEnabled(true);
 
-    if(m_VoltList.isEmpty()) {
+    m_currVoltList.clear();
+
+    /*if(m_VoltList.isEmpty()) {
         return;
-    }    
+    }*/
 
     // Calculating Average Voltage
     m_lVoltAvgName->setText("Average Voltage, V");
