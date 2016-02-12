@@ -7,11 +7,21 @@ BufferParser::BufferParser(ComPort *port, QThread *parent)
     : QThread(parent)
     , m_port(port)
 {
+    connect(this, SIGNAL(finished()), SLOT(quit()));
+}
+
+void BufferParser::quit()
+{
+#ifdef DEBUG
+    qDebug() << "THREAD QUIT";
+#endif
+    QThread::quit();
+    m_port->m_isDataParsing = false;
 }
 
 void BufferParser::run()
 {
-#ifdef DEBUG
+#ifdef DEBUG0
     qDebug() << "BEGIN THREAD";
     qDebug() << "m_port->m_doubleBufferData.size():" << m_port->m_doubleBufferData.size();
 #endif
@@ -26,12 +36,12 @@ void BufferParser::run()
 
             if((m_port->m_counter == m_port->m_packetLenght)
                     && (m_port->m_readData.at(m_port->m_packetLenght - 1) == static_cast<char>(m_port->m_stopByte))) {
-#ifdef DEBUG
+#ifdef DEBUG0
     qDebug() << "EMIT SUCCESS";
 #endif
                 emit m_port->DataIsReaded(true);
                 emit m_port->ReadedData(m_port->m_readData);
-#ifdef DEBUG
+#ifdef DEBUG0
     qDebug() << "EMITED SUCCESS";
 #endif
 
@@ -56,9 +66,10 @@ void BufferParser::run()
         }
         m_port->m_doubleBufferData.remove(0, 1);
     }
-    m_port->m_isDataParsing = false;
-#ifdef DEBUG
+//    m_port->m_isDataParsing = false;
+#ifdef DEBUG0
     qDebug() << "END THREAD";
 #endif
+//    exec();
 }
 

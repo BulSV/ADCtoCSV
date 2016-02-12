@@ -10,6 +10,9 @@ class BufferParser : public QThread
     Q_OBJECT
 public:
     explicit BufferParser(ComPort *port, QThread *parent = 0);
+public slots:
+    void quit();
+protected:
     virtual void run();
 private:
     ComPort *m_port;

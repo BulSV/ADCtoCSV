@@ -32,8 +32,8 @@ ComPort::ComPort(QSerialPort *port,
     m_port->setReadBufferSize(m_bufferSize); // for reading m_bufferSize bytes at the time
     m_readBufferTimer->setInterval(bufferTime_ms); // timer that determined buffer size by time
 
-    connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
-    connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
+//    connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
+//    connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
 }
 
 ComPort::~ComPort()
@@ -47,15 +47,15 @@ void ComPort::readData()
         m_bufferData.append(m_port->read(m_bufferSize));
 
         m_doubleBufferData.append(m_bufferData);
-#ifdef DEBUG
-        qDebug() << "m_bufferData.size():" << m_bufferData.size();
-        qDebug() << "m_doubleBufferData.size():" << m_doubleBufferData.size();
-#endif
         m_bufferData.clear();
 
-        if(!m_isDataParsing) {
-            m_bufferParser->run();
-        }
+        bufferParser();
+        /*if(!m_isDataParsing) {
+#ifdef DEBUG
+            qDebug() << "STARTING THREAD";
+#endif
+            m_bufferParser->start();
+        }*/
     }
 }
 
@@ -64,6 +64,9 @@ void ComPort::bufferData()
     if(m_port->openMode() != QSerialPort::WriteOnly) {
         if(!m_readBufferTimer->isActive()) {
             m_readBufferTimer->start();
+#ifdef DEBUG
+            qDebug() << "STARTING TIMER";
+#endif
         }
         if(m_port->bytesAvailable() > 0) {
             m_bufferData.append(m_port->read(m_bufferSize));
@@ -100,6 +103,7 @@ QByteArray ComPort::getWriteData() const
 
 void ComPort::resetBufferSize()
 {
+    m_readBufferTimer->stop();
     disconnect(m_port, SIGNAL(readyRead()), this, SLOT(readData()));
     m_bufferSize = 1;
     m_port->setReadBufferSize(m_bufferSize);
