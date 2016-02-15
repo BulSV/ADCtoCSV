@@ -55,7 +55,7 @@ class Dialog : public QWidget
     QTimer *m_BlinkTimeRxColor;
 
     QList<QString> m_VoltList;
-    QList<QString> m_currVoltList;
+    QList<double> m_currVoltList;
     QList<QString> m_SecondList;
     QTime *m_CurrentTime;
     double m_LastRecieveTime;
@@ -103,6 +103,7 @@ class Dialog : public QWidget
     QVector<double> m_minorVoltSum;
     int m_oldMinorVoltNumSum;
     int m_currMinorVoltNum;
+    int m_currMinorVoltSumSize;
 
     bool m_ctrlWasPressed;
     double m_yAxisMin;
@@ -119,6 +120,8 @@ class Dialog : public QWidget
 
     QwtScaleDiv newYAxisScale(int majorTicks, int minorTicks);
 
+    void Vpp(double currentVoltage);
+    
 private slots:
     void toggleTimer(bool isEnabled);
     void stop();

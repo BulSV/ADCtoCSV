@@ -275,6 +275,20 @@ void Dialog::start()
     }    
 }
 
+void Dialog::Vpp(double currentVoltage)
+{
+    if(!m_minVoltage && !m_maxVoltage) {
+        m_minVoltage = currentVoltage;
+        m_maxVoltage = currentVoltage;
+    }
+    if(m_maxVoltage < currentVoltage) {
+        m_maxVoltage = currentVoltage;
+    }
+    if(m_minVoltage > currentVoltage) {
+        m_minVoltage = currentVoltage;
+    }
+}
+
 void Dialog::received(bool isReceived)
 {
 	if(isReceived && m_bStop->isEnabled()) {
@@ -289,21 +303,13 @@ void Dialog::received(bool isReceived)
 
 		if(m_isRecording || m_isWatching) {
             double currentVoltage = m_Protocol->getReadedData().value("VOLT").toInt() * VOLTFACTOR;
-			if(!m_minVoltage && !m_maxVoltage) {
-				m_minVoltage = currentVoltage;
-				m_maxVoltage = currentVoltage;
-			}
-			if(m_maxVoltage < currentVoltage) {
-				m_maxVoltage = currentVoltage;
-			}
-			if(m_minVoltage > currentVoltage) {
-				m_minVoltage = currentVoltage;
-			}
+
+            Vpp(currentVoltage);
 
             if(m_isRecording) {
                 m_VoltList.push_back(QString::number(currentVoltage, 'f'));
             }
-            m_currVoltList.push_back(QString::number(currentVoltage, 'f'));
+            m_currVoltList.push_back(currentVoltage);
 
             if(m_CurrentTime->elapsed() / 1000.0 - m_LastRecieveTime >= 1.0) {				
                 // Calculating Sampling Rate
@@ -316,29 +322,31 @@ void Dialog::received(bool isReceived)
                 // Calculating Average Voltage
                 m_currVoltSum = 0;
                 for(int i = 0; i < m_currVoltNum; ++i) {
-                    m_currVoltSum += m_currVoltList.at(i).toDouble();
+                    m_currVoltSum += m_currVoltList.at(i);
                 }
                 m_oldVoltSum += m_currVoltSum;
                 m_lVolt->setText(QString::number(m_currVoltSum / m_currVoltNum, 'f', 3));
 
                 // Calculating Deviation
-                double voltsAvgInFilterPeriod = 0;
-                double deviation = 0;
+                double voltsAvgInFilterPeriod = 0.0;
+                double deviation = 0.0;
                 m_currMinorVoltNum = static_cast<int>(m_currVoltNum / (m_currTimeInterval * m_filterFreq));
                 if(m_currMinorVoltNum) {
-                    for(int i = 0; i < m_currVoltNum / m_currMinorVoltNum; i += m_currMinorVoltNum) {
-                        for(int j = i; j < m_currMinorVoltNum + i; ++j) {
-                            voltsAvgInFilterPeriod += m_currVoltList.at(j).toDouble();
+                    for(int i = 0; i < static_cast<int>(m_currTimeInterval * m_filterFreq); i += m_currMinorVoltNum) {
+                        for(int j = i; j < i + m_currMinorVoltNum; ++j) {
+                            voltsAvgInFilterPeriod += m_currVoltList.at(j);
                         }
                         voltsAvgInFilterPeriod /= m_currMinorVoltNum;
                         m_minorVoltSum.append(voltsAvgInFilterPeriod);
-                        deviation += round(qPow(m_currVoltSum / m_currVoltNum - voltsAvgInFilterPeriod, 2), 6);
-                        voltsAvgInFilterPeriod = 0;
+                        deviation += qPow(m_currVoltSum / m_currVoltNum - voltsAvgInFilterPeriod, 2);
+                        voltsAvgInFilterPeriod = 0.0;
                     }
 #ifdef DEBUG
                     qDebug() << "Deviation:" << deviation;
 #endif
-                    deviation = qSqrt(deviation * m_currMinorVoltNum / m_currVoltNum);
+                    m_currMinorVoltSumSize = m_minorVoltSum.size() - m_currMinorVoltSumSize;
+                    deviation /= m_currMinorVoltSumSize;
+                    deviation = qSqrt(deviation);
 #ifdef DEBUG
                     qDebug() << "Current Volts Number:" << m_currVoltNum;
                     qDebug() << "Minor Ui count:" << m_currMinorVoltNum;
@@ -346,7 +354,7 @@ void Dialog::received(bool isReceived)
                     qDebug() << "m_currTimeInterval:" << m_currTimeInterval;
                     qDebug() << "Deviation:" << deviation;
 #endif
-                    m_lDeviation->setText(QString::number(deviation * 1000, 'f', 3));
+                    m_lDeviation->setText(QString::number(deviation * 1000.0, 'f', 3));
                     m_oldMinorVoltNumSum += m_currMinorVoltNum;
 
                     voltsPloting();
@@ -429,6 +437,7 @@ void Dialog::record()
         m_currTimeInterval = 0;
         m_oldMinorVoltNumSum = 0;
         m_currMinorVoltNum = 0;
+        m_currMinorVoltSumSize = 0;
         m_PrevTime = 0;
 
         m_plot->setAxisScale( QwtPlot::xBottom, 0, 60, 10 );
@@ -678,7 +687,7 @@ void Dialog::stopRec()
     m_avgDeviation /= m_minorVoltSum.size();
     m_minorVoltSum.clear();
     m_avgDeviation = sqrt(m_avgDeviation);
-    m_lDeviation->setText(QString::number(m_avgDeviation * 1000, 'f', 3));
+    m_lDeviation->setText(QString::number(m_avgDeviation * 1000.0, 'f', 3));
 
     // Calculating Sampling Rate
     m_lSamplingRateAvgName->setText("Average Sampling Rate, Hz");
@@ -994,6 +1003,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_filterFreq(1)
     , m_oldMinorVoltNumSum(0)
     , m_currMinorVoltNum(0)
+    , m_currMinorVoltSumSize(0)
     , m_ctrlWasPressed(false)
     , m_yAxisMin(0)
     , m_yAxisMax(5)

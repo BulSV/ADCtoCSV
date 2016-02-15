@@ -110,7 +110,7 @@ void ComPort::resetBufferSize()
     m_bufferData.clear();    
     connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
     connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
-    m_readBufferTimer->start();
+//    m_readBufferTimer->start();
 }
 
 void ComPort::privateWriteData()
