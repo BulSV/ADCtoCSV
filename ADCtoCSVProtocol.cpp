@@ -19,7 +19,7 @@ ADCtoCSVProtocol::ADCtoCSVProtocol(ComPort *comPort, QObject *parent) :
 
     connect(itsComPort, SIGNAL(DataIsReaded(bool)), this, SLOT(readData(bool)));
     connect(itsComPort, SIGNAL(DataIsWrited(bool)), this, SIGNAL(DataIsWrited(bool)));
-    connect(m_resend, SIGNAL(timeout()), this, SLOT(writeData()));
+//    connect(m_resend, SIGNAL(timeout()), this, SLOT(writeData()));
 }
 
 void ADCtoCSVProtocol::setDataToWrite(const QMultiMap<QString, QString> &data)
@@ -27,24 +27,31 @@ void ADCtoCSVProtocol::setDataToWrite(const QMultiMap<QString, QString> &data)
     itsWriteData = data;
 }
 
-QMultiMap<QString, QString> ADCtoCSVProtocol::getReadedData() const
+QMultiMap<QString, QList<QString> > ADCtoCSVProtocol::getReadedData() const
 {
     return itsReadData;
 }
 
 void ADCtoCSVProtocol::readData(bool isReaded)
 {
-    itsReadData.clear();
-
     if(isReaded) {
+        itsReadData.clear();
+        QList<QByteArray> baList;
         QByteArray ba;
+        QList<QString> volt;
 
-        ba = itsComPort->getReadData();
+        baList = itsComPort->getReadData();
 
-        for(int i = 0; i < ba.size(); i = i + 4) {
-            itsReadData.insert(QString("VOLT"), QString::number(wordToInt(ba.mid(i + 1, i + 2))));
-            emit DataIsReaded(true);
+        for(int i = 0; i < baList.size(); ++i) {
+            ba = baList.at(i);
+//            for(int j = 0; j < ba.size(); j = i + 4) {
+                volt.append(QString::number(wordToInt(ba.mid(/*j + */1, /*j + */2))));
+//            }
+            ba.clear();
         }
+        itsReadData.insert(QString("VOLT"), volt);
+        volt.clear();
+        emit DataIsReaded(true);
     } else {
         emit DataIsReaded(false);
     }

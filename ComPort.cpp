@@ -3,7 +3,6 @@
 #endif
 
 #include "ComPort.h"
-#include "BufferParser.h"
 
 #include <QApplication>
 #include <QTime>
@@ -24,10 +23,8 @@ ComPort::ComPort(QSerialPort *port,
     , m_counter(0)
     , m_bufferSize(1)
     , m_isDataWritten(true)
-    , m_isMaster(isMaster)
-    , m_isDataParsing(false)
+    , m_isMaster(isMaster)    
     , m_readBufferTimer(new QTimer(this))
-    , m_bufferParser(new BufferParser(this))
 {   
     m_port->setReadBufferSize(m_bufferSize); // for reading m_bufferSize bytes at the time
     m_readBufferTimer->setInterval(bufferTime_ms); // timer that determined buffer size by time
@@ -37,8 +34,7 @@ ComPort::ComPort(QSerialPort *port,
 }
 
 ComPort::~ComPort()
-{
-    delete m_bufferParser;
+{    
 }
 
 void ComPort::readData()
@@ -49,13 +45,7 @@ void ComPort::readData()
         m_doubleBufferData.append(m_bufferData);
         m_bufferData.clear();
 
-        bufferParser();
-        /*if(!m_isDataParsing) {
-#ifdef DEBUG
-            qDebug() << "STARTING THREAD";
-#endif
-            m_bufferParser->start();
-        }*/
+        bufferParser();        
     }
 }
 
@@ -76,6 +66,9 @@ void ComPort::bufferData()
 
 void ComPort::bufferDef()
 {
+#ifdef DEBUG
+            qDebug() << "BUFFER IS DEFINED";
+#endif
     disconnect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
     disconnect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
     m_readBufferTimer->stop();
@@ -85,7 +78,7 @@ void ComPort::bufferDef()
     connect(m_port, SIGNAL(readyRead()), this, SLOT(readData()));
 }
 
-QByteArray ComPort::getReadData() const
+QList<QByteArray> ComPort::getReadData() const
 {
     return m_readData;
 }
@@ -110,7 +103,6 @@ void ComPort::resetBufferSize()
     m_bufferData.clear();    
     connect(m_port, SIGNAL(readyRead()), this, SLOT(bufferData()));
     connect(m_readBufferTimer, SIGNAL(timeout()), this, SLOT(bufferDef()));
-//    m_readBufferTimer->start();
 }
 
 void ComPort::privateWriteData()
@@ -124,37 +116,60 @@ void ComPort::privateWriteData()
 }
 
 void ComPort::bufferParser()
-{
-    m_isDataParsing = true;
-    while (m_doubleBufferData.size()) {
+{    
+    m_readData.clear();
+    QByteArray readData;
+#ifdef DEBUG0
+            qDebug() << "PARSING...";
+#endif
+    while (!m_doubleBufferData.isEmpty()) {
         if(!m_counter && m_doubleBufferData.at(0) == static_cast<char>(m_startByte)) {
-            m_readData.append(m_doubleBufferData.at(0));
+            readData.append(m_doubleBufferData.at(0));
             ++m_counter;
+#ifdef DEBUG0
+             qDebug() << m_counter << "BYTE[1]";
+#endif
         } else if(m_counter && m_counter < m_packetLenght) {
-            m_readData.append(m_doubleBufferData.at(0));
+            readData.append(m_doubleBufferData.at(0));
             ++m_counter;
-
+#ifdef DEBUG0
+            qDebug() << m_counter << "BYTE[n]";
+#endif
             if((m_counter == m_packetLenght)
-                    && (m_readData.at(m_packetLenght - 1) == static_cast<char>(m_stopByte))) {
-                emit DataIsReaded(true);
-                emit ReadedData(m_readData);
+                    && (readData.at(m_packetLenght - 1) == static_cast<char>(m_stopByte))) {
+#ifdef DEBUG0
+            qDebug() << "PACKET READED";
+#endif
+                m_readData.append(readData);
 
                 if(!m_isMaster && !m_isDataWritten) {
                     privateWriteData();
                 }
 
-                m_readData.clear();
+                readData.clear();
                 m_counter = 0;
             }
         } else {
-            emit DataIsReaded(false);
-
-            m_readData.clear();
+#ifdef DEBUG
+            qDebug() << "PACKET NOT READED";
+#endif
+            readData.clear();
             m_counter = 0;
+            emit DataIsReaded(false);
         }
         m_doubleBufferData.remove(0, 1);
     }
-    m_isDataParsing = false;
+    if(m_readData.isEmpty()) {
+        readData.clear();
+        m_counter = 0;
+        emit DataIsReaded(false);
+    } else {
+        emit DataIsReaded(true);
+        emit ReadedData(m_readData);
+    }
+#ifdef DEBUG0
+            qDebug() << "END PARSING";
+#endif
 }
 
 void ComPort::writeData()
