@@ -36,8 +36,6 @@
 
 #define TIMEDISPLAY 1000 // ms
 
-#define TIMEVOLTDISPLAY 200 // ms
-
 #define VOLTFACTOR 5.174*2.2/4096.0 // V
 
 #define MINVOLT 0.0 // V
@@ -53,8 +51,8 @@
 void Dialog::view()
 {
     QGridLayout *modesLayout = new QGridLayout;
-    modesLayout->addWidget(m_rbNormal, 0, 0);
-    modesLayout->addWidget(m_rbContinuous, 1, 0);
+    modesLayout->addWidget(m_rbRecord, 0, 0);
+    modesLayout->addWidget(m_rbWatch, 1, 0);
     modesLayout->setSpacing(5);
 
     QGroupBox *gbModes = new QGroupBox("Display Modes", this);
@@ -173,10 +171,9 @@ void Dialog::connections()
     connect(m_bSetRate, SIGNAL(clicked()), this, SLOT(setRate()));
 
     connect(m_TimeDisplay, SIGNAL(timeout()), this, SLOT(timeDisplay()));
-//    connect(m_TimeVoltDisplay, SIGNAL(timeout()), this, SLOT(voltsPloting()));
 
-    connect(m_rbNormal, SIGNAL(clicked(bool)), this, SLOT(normalMode(bool)));
-    connect(m_rbContinuous, SIGNAL(clicked(bool)), this, SLOT(continuousMode(bool)));    
+    connect(m_rbRecord, SIGNAL(clicked(bool)), this, SLOT(recordMode()));
+    connect(m_rbWatch, SIGNAL(clicked(bool)), this, SLOT(watchMode()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -226,7 +223,7 @@ void Dialog::stop()
     if(m_isRecording || m_isWatching) {
         stopRec();
     }
-    if(m_rbNormal->isChecked()) {
+    if(m_rbRecord->isChecked()) {
         m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
     } else {
         m_bRec->setIcon(QIcon(":/Resources/Play.png"));
@@ -267,7 +264,7 @@ void Dialog::start()
         m_lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
         m_lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
 
-        if(m_rbNormal->isChecked()) {
+        if(m_rbRecord->isChecked()) {
             m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
         } else {
             m_bRec->setIcon(QIcon(":/Resources/Play.png"));
@@ -360,7 +357,6 @@ void Dialog::received(bool isReceived)
                 qDebug() << "Deviation:" << deviation;
 #endif
                 m_lDeviation->setText(QString::number(deviation * 1000.0, 'f', 3));
-                m_oldMinorVoltNumSum += m_currMinorVoltNum;
 
                 voltsPloting();
             }
@@ -377,7 +373,7 @@ void Dialog::received(bool isReceived)
 void Dialog::record()
 {
     if(m_Port->isOpen()) {
-        if(m_rbNormal->isChecked()) {
+        if(m_rbRecord->isChecked()) {
             m_isRecording = true;
             m_isWatching = false;
         } else {
@@ -412,8 +408,8 @@ void Dialog::record()
             m_BlinkTimeRec->start();
         }
 
-        m_rbNormal->setEnabled(false);
-        m_rbContinuous->setEnabled(false);
+        m_rbRecord->setEnabled(false);
+        m_rbWatch->setEnabled(false);
 
         m_SecondList.clear();
         m_VoltList.clear();
@@ -438,8 +434,7 @@ void Dialog::record()
         m_oldVoltNumSum = 0;
         m_currVoltNum = 0;
         m_oldTimeIntervalSum = 0;
-        m_currTimeInterval = 0;
-        m_oldMinorVoltNumSum = 0;
+        m_currTimeInterval = 0;       
         m_currMinorVoltNum = 0;        
         m_PrevTime = 0;
 
@@ -449,8 +444,7 @@ void Dialog::record()
         m_minVoltage = MINVOLT;
 
         m_CurrentTime->start();
-        m_TimeDisplay->start();
-        m_TimeVoltDisplay->start();
+        m_TimeDisplay->start();       
     }
 }
 
@@ -643,8 +637,7 @@ QwtScaleDiv Dialog::newYAxisScale(int majorTicks, int minorTicks)
 }
 
 void Dialog::stopRec()
-{
-    m_TimeVoltDisplay->stop();    
+{    
     m_TimeDisplay->stop();
     m_BlinkTimeRec->stop();
     m_bStopRec->setEnabled(false);
@@ -659,8 +652,8 @@ void Dialog::stopRec()
     } else {
         m_bRec->setIcon(QIcon(":/Resources/Play.png"));
     }
-    m_rbNormal->setEnabled(true);
-    m_rbContinuous->setEnabled(true);
+    m_rbRecord->setEnabled(true);
+    m_rbWatch->setEnabled(true);
 
     m_isBright = true;
 
@@ -840,7 +833,7 @@ void Dialog::voltsPloting()
     qApp->processEvents();
 }
 
-void Dialog::normalMode(bool isNormal)
+void Dialog::recordMode()
 {
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
@@ -848,7 +841,7 @@ void Dialog::normalMode(bool isNormal)
     }
 }
 
-void Dialog::continuousMode(bool isContinuous)
+void Dialog::watchMode()
 {
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
@@ -979,15 +972,14 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lVolt(new QLabel("NONE", this))
     , m_lDeviation(new QLabel("NONE", this))
     , m_lSamplingRate(new QLabel("NONE", this))
-    , m_lVpp(new QLabel("NONE", this))
-    , m_TimeVoltDisplay(new QTimer(this))
+    , m_lVpp(new QLabel("NONE", this))    
     , m_plot(new QwtPlot(this))
     , m_Curve(new QwtPlotCurve)
     , m_PrevTime(0.0)
     , m_maxVoltage(MAXVOLT)
     , m_minVoltage(MINVOLT)
-    , m_rbNormal(new QRadioButton("Record", this))
-    , m_rbContinuous(new QRadioButton("Watch", this))
+    , m_rbRecord(new QRadioButton("Record", this))
+    , m_rbWatch(new QRadioButton("Watch", this))
     , m_lVoltAvgName(new QLabel("Voltage, V", this))
     , m_lDeviationAvgName(new QLabel("Deviation, mV", this))
     , m_lSamplingRateAvgName(new QLabel("Sampling Rate, Hz", this))    
@@ -998,8 +990,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_currVoltNum(0)
     , m_oldTimeIntervalSum(0)
     , m_currTimeInterval(0)
-    , m_filterFreq(1)
-    , m_oldMinorVoltNumSum(0)
+    , m_filterFreq(1)    
     , m_currMinorVoltNum(0)   
     , m_ctrlWasPressed(false)
     , m_yAxisMin(0)
@@ -1053,7 +1044,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     bauds << "921600" << "115200";
     m_cbBaud->addItems(bauds);
 
-    m_rbNormal->setChecked(true);
+    m_rbRecord->setChecked(true);
 
     m_bStop->setEnabled(false);
     m_bStopRec->setEnabled(false);
@@ -1067,9 +1058,7 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     m_BlinkTimeRec->setInterval(BLINKTIMEREC);
 
-    m_TimeDisplay->setInterval(TIMEDISPLAY);
-
-    m_TimeVoltDisplay->setInterval(TIMEVOLTDISPLAY);
+    m_TimeDisplay->setInterval(TIMEDISPLAY);    
 
     QString exprT = "(\\-){,1}(\\d){,2}";
     QRegExp regExprT(exprT);

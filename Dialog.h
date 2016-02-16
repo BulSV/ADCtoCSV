@@ -71,8 +71,7 @@ class Dialog : public QWidget
     QLabel *m_lVolt;
     QLabel *m_lDeviation;
     QLabel *m_lSamplingRate;
-    QLabel *m_lVpp;
-    QTimer *m_TimeVoltDisplay;
+    QLabel *m_lVpp;    
 
     QwtPlot *m_plot;
     QwtPlotCurve *m_Curve;
@@ -83,8 +82,8 @@ class Dialog : public QWidget
     double m_maxVoltage;
     double m_minVoltage;
 
-    QRadioButton *m_rbNormal;
-    QRadioButton *m_rbContinuous;
+    QRadioButton *m_rbRecord;
+    QRadioButton *m_rbWatch;
 
     QLabel *m_lVoltAvgName;
     QLabel *m_lDeviationAvgName;
@@ -98,8 +97,7 @@ class Dialog : public QWidget
     double m_oldTimeIntervalSum;
     double m_currTimeInterval;
     int m_filterFreq;
-    QVector<double> m_minorVoltSum;
-    int m_oldMinorVoltNumSum;
+    QVector<double> m_minorVoltSum;    
     int m_currMinorVoltNum;    
 
     bool m_ctrlWasPressed;
@@ -134,8 +132,8 @@ private slots:
     void stopRec();
     void timeDisplay();
     void voltsPloting();
-    void normalMode(bool isNormal);
-    void continuousMode(bool isContinuous);
+    void recordMode();
+    void watchMode();
     void setFilterFreq(int Hz);
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
