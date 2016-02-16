@@ -145,6 +145,7 @@ void Dialog::view()
     // made window of app fixed size
     this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 
+    this->setTabOrder(m_sbFilterFreq, m_sbSamplRate);
     this->setTabOrder(m_sbSamplRate, m_chbTimer);
     this->setTabOrder(m_chbTimer, m_leTimer);
     this->setTabOrder(m_leTimer, m_leTestName);
@@ -343,9 +344,8 @@ void Dialog::received(bool isReceived)
                     }
 #ifdef DEBUG
                     qDebug() << "Deviation:" << deviation;
-#endif
-                    m_currMinorVoltSumSize = m_minorVoltSum.size() - m_currMinorVoltSumSize;
-                    deviation /= m_currMinorVoltSumSize;
+#endif                    
+                    deviation /= static_cast<int>(m_currTimeInterval * m_filterFreq);
                     deviation = qSqrt(deviation);
 #ifdef DEBUG
                     qDebug() << "Current Volts Number:" << m_currVoltNum;
@@ -436,8 +436,7 @@ void Dialog::record()
         m_oldTimeIntervalSum = 0;
         m_currTimeInterval = 0;
         m_oldMinorVoltNumSum = 0;
-        m_currMinorVoltNum = 0;
-        m_currMinorVoltSumSize = 0;
+        m_currMinorVoltNum = 0;        
         m_PrevTime = 0;
 
         m_plot->setAxisScale( QwtPlot::xBottom, 0, 60, 10 );
@@ -668,11 +667,7 @@ void Dialog::stopRec()
     m_leTempEnv->setEnabled(true);
     m_leTestName->setEnabled(true);
 
-    m_currVoltList.clear();
-
-    /*if(m_VoltList.isEmpty()) {
-        return;
-    }*/
+    m_currVoltList.clear();    
 
     // Calculating Average Voltage
     m_lVoltAvgName->setText("Average Voltage, V");
@@ -995,15 +990,13 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_oldVoltSum(0)
     , m_currVoltSum(0)
     , m_avgDeviation(0)
-//    , m_currDeviation(0)
     , m_oldVoltNumSum(0)
     , m_currVoltNum(0)
     , m_oldTimeIntervalSum(0)
     , m_currTimeInterval(0)
     , m_filterFreq(1)
     , m_oldMinorVoltNumSum(0)
-    , m_currMinorVoltNum(0)
-    , m_currMinorVoltSumSize(0)
+    , m_currMinorVoltNum(0)   
     , m_ctrlWasPressed(false)
     , m_yAxisMin(0)
     , m_yAxisMax(5)

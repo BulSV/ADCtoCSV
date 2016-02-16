@@ -93,17 +93,14 @@ class Dialog : public QWidget
     double m_oldVoltSum;
     double m_currVoltSum;
     double m_avgDeviation;
-//    double m_currDeviation;
     int m_oldVoltNumSum;
     int m_currVoltNum;
     double m_oldTimeIntervalSum;
     double m_currTimeInterval;
     int m_filterFreq;
-//    QVector<double> m_oldMinorVoltSum;
     QVector<double> m_minorVoltSum;
     int m_oldMinorVoltNumSum;
-    int m_currMinorVoltNum;
-    int m_currMinorVoltSumSize;
+    int m_currMinorVoltNum;    
 
     bool m_ctrlWasPressed;
     double m_yAxisMin;
