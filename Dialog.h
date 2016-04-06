@@ -89,12 +89,14 @@ class Dialog : public QWidget
     QLabel *m_lDeviationAvgName;
     QLabel *m_lSamplingRateAvgName;    
 
-    double m_oldVoltSum;
+    double m_prevVoltSum;
     double m_currVoltSum;
+    double m_prevDeviation;
     double m_avgDeviation;
-    int m_oldVoltNumSum;
+    int m_prevVoltNumSum;
+    int m_prevMinorVoltNum;
     int m_currVoltNum;
-    double m_oldTimeIntervalSum;
+    double m_prevTimeIntervalSum;
     double m_currTimeInterval;
     int m_filterFreq;
     QVector<double> m_minorVoltSum;    
