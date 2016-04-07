@@ -175,6 +175,8 @@ void Dialog::connections()
     connect(m_rbRecord, SIGNAL(clicked(bool)), this, SLOT(recordMode()));
     connect(m_rbWatch, SIGNAL(clicked(bool)), this, SLOT(watchMode()));
 
+    connect(m_VoltMetterTimer, SIGNAL(timeout()), this, SLOT(voltMetter()));
+
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
 }
@@ -270,6 +272,8 @@ void Dialog::start()
             m_bRec->setIcon(QIcon(":/Resources/Play.png"));
         }
         m_ComPort->resetBufferSize();
+
+        m_VoltMetterTimer->start();
     }    
 }
 
@@ -297,6 +301,21 @@ void Dialog::received(bool isReceived)
 
         if(m_CurrentTime->isNull()) {
             m_CurrentTime->start();
+        }
+
+        if(!m_isRecording && !m_isWatching) {
+            double currentVoltage = 0.0;
+            for(int i = 0; i < m_Protocol->getReadedData().value("VOLT").size(); ++i) {
+                currentVoltage = m_Protocol->getReadedData().value("VOLT").at(i).toInt() * VOLTFACTOR;
+                m_currVoltList.push_back(currentVoltage);
+            }
+            // Calculating Average Voltage
+            m_currVoltNum = m_currVoltList.size();
+            m_currVoltSum = 0;
+            for(int i = 0; i < m_currVoltNum; ++i) {
+                m_currVoltSum += m_currVoltList.at(i);
+            }
+            m_prevVoltSum += m_currVoltSum;
         }
 
         if(m_isRecording || m_isWatching) {
@@ -450,13 +469,18 @@ void Dialog::record()
         m_currMinorVoltNum = 0;        
         m_PrevTime = 0;
 
+        m_currVoltList.clear();
+
         m_plot->setAxisScale( QwtPlot::xBottom, 0, 60, 10 );
 
         m_maxVoltage = MAXVOLT;
         m_minVoltage = MINVOLT;
 
         m_CurrentTime->start();
-        m_TimeDisplay->start();       
+        m_TimeDisplay->start();
+
+        m_VoltMetterTimer->stop();
+        m_lVolt->setText("NONE");
     }
 }
 
@@ -870,6 +894,14 @@ void Dialog::setFilterFreq(int Hz)
     }
 }
 
+void Dialog::voltMetter()
+{
+    m_lVolt->setText(QString::number(m_currVoltSum / m_currVoltNum, 'f', 3));
+    m_prevVoltSum = 0;
+    m_currVoltSum = 0;
+    m_currVoltList.clear();
+}
+
 bool Dialog::eventFilter(QObject *obj, QEvent *event)
 {
     if( event->type() == QEvent::KeyPress && ( obj == this ) ) {
@@ -984,7 +1016,8 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lVolt(new QLabel("NONE", this))
     , m_lDeviation(new QLabel("NONE", this))
     , m_lSamplingRate(new QLabel("NONE", this))
-    , m_lVpp(new QLabel("NONE", this))    
+    , m_lVpp(new QLabel("NONE", this))
+    , m_VoltMetterTimer(new QTimer(this))
     , m_plot(new QwtPlot(this))
     , m_Curve(new QwtPlotCurve)
     , m_PrevTime(0.0)
@@ -1072,7 +1105,9 @@ Dialog::Dialog(QString title, QWidget *parent)
 
     m_BlinkTimeRec->setInterval(BLINKTIMEREC);
 
-    m_TimeDisplay->setInterval(TIMEDISPLAY);    
+    m_TimeDisplay->setInterval(TIMEDISPLAY);
+
+    m_VoltMetterTimer->setInterval(200);
 
     QString exprT = "(\\-){,1}(\\d){,2}";
     QRegExp regExprT(exprT);

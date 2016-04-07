@@ -71,7 +71,9 @@ class Dialog : public QWidget
     QLabel *m_lVolt;
     QLabel *m_lDeviation;
     QLabel *m_lSamplingRate;
-    QLabel *m_lVpp;    
+    QLabel *m_lVpp;
+
+    QTimer *m_VoltMetterTimer;
 
     QwtPlot *m_plot;
     QwtPlotCurve *m_Curve;
@@ -137,6 +139,7 @@ private slots:
     void recordMode();
     void watchMode();
     void setFilterFreq(int Hz);
+    void voltMetter();
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
 public:
