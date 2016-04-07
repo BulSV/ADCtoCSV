@@ -53,8 +53,9 @@
 void Dialog::view()
 {
     QGridLayout *modesLayout = new QGridLayout;
-    modesLayout->addWidget(m_rbRecord, 0, 0);
-    modesLayout->addWidget(m_rbWatch, 1, 0);
+    modesLayout->addWidget(m_rbVoltMeter, 0, 0);
+    modesLayout->addWidget(m_rbRecord, 1, 0);
+    modesLayout->addWidget(m_rbWatch, 2, 0);
     modesLayout->setSpacing(5);
 
     QGroupBox *gbModes = new QGroupBox("Display Modes", this);
@@ -69,7 +70,7 @@ void Dialog::view()
     portLayout->addWidget(m_bStop, 2, 1);
     portLayout->addWidget(m_lTx, 3, 0, 2, 1);
     portLayout->addWidget(m_lRx, 3, 1, 2, 1);
-    portLayout->addWidget(gbModes, 5, 0, 2, 2);
+    portLayout->addWidget(gbModes, 5, 0, 3, 2);
     portLayout->setSpacing(5);
 
     m_sbSamplRate->setMaximumWidth(100);
@@ -174,6 +175,7 @@ void Dialog::connections()
 
     connect(m_TimeDisplay, SIGNAL(timeout()), this, SLOT(timeDisplay()));
 
+    connect(m_rbVoltMeter, SIGNAL(clicked(bool)), this, SLOT(voltMeterMode()));
     connect(m_rbRecord, SIGNAL(clicked(bool)), this, SLOT(recordMode()));
     connect(m_rbWatch, SIGNAL(clicked(bool)), this, SLOT(watchMode()));
 
@@ -259,8 +261,11 @@ void Dialog::start()
 
         m_bStart->setEnabled(false);
         m_bStop->setEnabled(true);
-        m_bSetRate->setEnabled(true);
-        m_bRec->setEnabled(true);
+        if(!m_rbVoltMeter->isChecked()) {
+            m_bSetRate->setEnabled(true);
+        } else {
+            m_bSetRate->setEnabled(false);
+        }
         m_cbPort->setEnabled(false);
         m_cbBaud->setEnabled(false);
         m_lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
@@ -268,9 +273,10 @@ void Dialog::start()
 
         if(m_rbRecord->isChecked()) {
             m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
-        } else {
+        } else if(m_rbWatch->isChecked()){
             m_bRec->setIcon(QIcon(":/Resources/Play.png"));
         }
+
         m_ComPort->resetBufferSize();        
     }    
 }
@@ -380,7 +386,7 @@ void Dialog::received(bool isReceived)
             if(m_minorVoltSum.size() > MINORCOUNTLIMIT) {
                 m_minorVoltSum.remove(0, m_minorVoltSum.size() - MINORCOUNTLIMIT);
             }
-        } else if (m_CurrentTime->elapsed() > VOLTMETERDISPLAY) {
+        } else if (m_rbVoltMeter->isChecked() && m_CurrentTime->elapsed() > VOLTMETERDISPLAY) {
             QList<QString> volts = m_Protocol->getReadedData().value("VOLT");
             int size = volts.size();
             double voltmeterSum = 0;
@@ -399,9 +405,12 @@ void Dialog::record()
         if(m_rbRecord->isChecked()) {
             m_isRecording = true;
             m_isWatching = false;
-        } else {
+        } else if(m_rbWatch->isChecked()){
             m_isRecording = false;
             m_isWatching = true;
+        } else {
+            m_isRecording = false;
+            m_isWatching = false;
         }
 
         m_leSerialNum->setEnabled(false);
@@ -431,6 +440,7 @@ void Dialog::record()
             m_BlinkTimeRec->start();
         }
 
+        m_rbVoltMeter->setEnabled(false);
         m_rbRecord->setEnabled(false);
         m_rbWatch->setEnabled(false);
 
@@ -467,7 +477,7 @@ void Dialog::record()
         m_minVoltage = MINVOLT;
 
         m_CurrentTime->start();
-        m_TimeDisplay->start();       
+        m_TimeDisplay->start();
     }
 }
 
@@ -675,6 +685,7 @@ void Dialog::stopRec()
     } else {
         m_bRec->setIcon(QIcon(":/Resources/Play.png"));
     }
+    m_rbVoltMeter->setEnabled(true);
     m_rbRecord->setEnabled(true);
     m_rbWatch->setEnabled(true);
 
@@ -856,11 +867,21 @@ void Dialog::voltsPloting()
     qApp->processEvents();
 }
 
+void Dialog::voltMeterMode()
+{
+    if(!m_bStart->isEnabled()) {
+        m_bStop->setEnabled(true);
+//        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
+    }
+    m_bRec->setEnabled(false);
+}
+
 void Dialog::recordMode()
 {
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
-        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));        
+        m_bRec->setEnabled(true);
+        m_bRec->setIcon(QIcon(":/Resources/startRecToFile.png"));
     }
 }
 
@@ -868,6 +889,7 @@ void Dialog::watchMode()
 {
     if(!m_bStart->isEnabled()) {
         m_bStop->setEnabled(true);
+        m_bRec->setEnabled(true);
         m_bRec->setIcon(QIcon(":/Resources/Play.png"));        
     }
 }
@@ -1001,6 +1023,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_PrevTime(0.0)
     , m_maxVoltage(MAXVOLT)
     , m_minVoltage(MINVOLT)
+    , m_rbVoltMeter(new QRadioButton("Voltmeter", this))
     , m_rbRecord(new QRadioButton("Record", this))
     , m_rbWatch(new QRadioButton("Watch", this))
     , m_lVoltAvgName(new QLabel("Voltage, V", this))
@@ -1069,7 +1092,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     bauds << "921600" << "115200";
     m_cbBaud->addItems(bauds);
 
-    m_rbRecord->setChecked(true);
+    m_rbVoltMeter->setChecked(true);
 
     m_bStop->setEnabled(false);
     m_bStopRec->setEnabled(false);

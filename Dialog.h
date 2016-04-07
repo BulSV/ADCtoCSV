@@ -82,6 +82,7 @@ class Dialog : public QWidget
     double m_maxVoltage;
     double m_minVoltage;
 
+    QRadioButton *m_rbVoltMeter;
     QRadioButton *m_rbRecord;
     QRadioButton *m_rbWatch;
 
@@ -134,6 +135,7 @@ private slots:
     void stopRec();
     void timeDisplay();
     void voltsPloting();
+    void voltMeterMode();
     void recordMode();
     void watchMode();
     void setFilterFreq(int Hz);
