@@ -347,20 +347,27 @@ void Dialog::received(bool isReceived)
 #ifdef DEBUG
                 qDebug() << "Deviation:" << deviation;
 #endif
-                deviation /= static_cast<int>(m_currTimeInterval * m_filterFreq);
+                /*deviation /= static_cast<int>(m_currTimeInterval * m_filterFreq);
                 deviation = qSqrt(deviation);                
                 deviation = qSqrt((qPow(deviation, 2) * m_currMinorVoltNum
                                    + qPow(m_prevDeviation, 2) * m_prevMinorVoltNum)
                                   / (m_currMinorVoltNum + m_prevMinorVoltNum));
                 m_prevDeviation = deviation;
-                m_prevMinorVoltNum += m_currMinorVoltNum;
+                m_prevMinorVoltNum += m_currMinorVoltNum;*/
 #ifdef DEBUG
                 qDebug() << "Current Volts Number:" << m_currVoltNum;
                 qDebug() << "Minor Ui count:" << m_currMinorVoltNum;
                 qDebug() << "Uavg:" << m_currVoltSum / m_currVoltNum;
                 qDebug() << "m_currTimeInterval:" << m_currTimeInterval;
                 qDebug() << "Deviation:" << deviation;
-#endif
+#endif                
+
+                for(int i = 0; i < m_minorVoltSum.size(); ++i) {
+                    deviation += qPow(m_minorVoltSum.at(i) - m_prevVoltSum / m_prevVoltNumSum, 2);
+                }
+                deviation /= m_minorVoltSum.size();
+                deviation = sqrt(deviation);
+
                 m_lDeviation->setText(QString::number(deviation * 1000.0, 'f', 3));                
 
                 voltsPloting();
