@@ -71,7 +71,7 @@ class Dialog : public QWidget
     QLabel *m_lVolt;
     QLabel *m_lDeviation;
     QLabel *m_lSamplingRate;
-    QLabel *m_lVpp;    
+    QLabel *m_lVpp;
 
     QwtPlot *m_plot;
     QwtPlotCurve *m_Curve;

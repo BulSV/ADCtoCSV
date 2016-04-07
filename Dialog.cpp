@@ -36,6 +36,8 @@
 
 #define TIMEDISPLAY 1000 // ms
 
+#define VOLTMETERDISPLAY 200 // ms
+
 #define VOLTFACTOR 5.174*2.2/4096.0 // V
 
 #define MINVOLT 0.0 // V
@@ -269,7 +271,7 @@ void Dialog::start()
         } else {
             m_bRec->setIcon(QIcon(":/Resources/Play.png"));
         }
-        m_ComPort->resetBufferSize();
+        m_ComPort->resetBufferSize();        
     }    
 }
 
@@ -378,6 +380,15 @@ void Dialog::received(bool isReceived)
             if(m_minorVoltSum.size() > MINORCOUNTLIMIT) {
                 m_minorVoltSum.remove(0, m_minorVoltSum.size() - MINORCOUNTLIMIT);
             }
+        } else if (m_CurrentTime->elapsed() > VOLTMETERDISPLAY) {
+            QList<QString> volts = m_Protocol->getReadedData().value("VOLT");
+            int size = volts.size();
+            double voltmeterSum = 0;
+            for(int i = 0; i < size; ++i) {
+                voltmeterSum += volts.at(i).toInt()*VOLTFACTOR;
+            }
+            m_lVolt->setText(QString::number(voltmeterSum / size, 'f', 3));
+            m_CurrentTime->restart();
         }
     }
 }
@@ -984,7 +995,7 @@ Dialog::Dialog(QString title, QWidget *parent)
     , m_lVolt(new QLabel("NONE", this))
     , m_lDeviation(new QLabel("NONE", this))
     , m_lSamplingRate(new QLabel("NONE", this))
-    , m_lVpp(new QLabel("NONE", this))    
+    , m_lVpp(new QLabel("NONE", this))
     , m_plot(new QwtPlot(this))
     , m_Curve(new QwtPlotCurve)
     , m_PrevTime(0.0)
@@ -1148,5 +1159,5 @@ Dialog::Dialog(QString title, QWidget *parent)
 Dialog::~Dialog()
 {
     m_Port->close();
-    delete m_CurrentTime;
+    delete m_CurrentTime;   
 }
